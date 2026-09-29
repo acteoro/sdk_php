@@ -39,6 +39,9 @@ final class VerificRca
     /** Verificari la cerere RCA, ITP, rovinieta si ARR. */
     public readonly ClientVerificari $verificari;
 
+    /** Vehiculele monitorizate din cont. */
+    public readonly ClientVehicule $vehicule;
+
     /**
      * Creeaza un client. Nu face nicio cerere pe retea.
      *
@@ -87,6 +90,7 @@ final class VerificRca
         $http = new Http($setari);
 
         $this->verificari = new ClientVerificari($http, $setari->ceas);
+        $this->vehicule = new ClientVehicule($http);
     }
 
     private static function cheie(?string $apiKey): string
