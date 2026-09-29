@@ -7,6 +7,7 @@ namespace VerificRca\Tests\Ajutor;
 use GuzzleHttp\Psr7\HttpFactory;
 use VerificRca\Internal\Setari;
 use VerificRca\Internal\SetariRetry;
+use VerificRca\VerificRca;
 
 final class Ajutor
 {
@@ -27,5 +28,23 @@ final class Ajutor
         $fabrica = new HttpFactory();
 
         return new Setari(self::CHEIE, 'https://www.verificrca.ro', $retry, $client, $fabrica, $fabrica, 'verificrca-sdk-php/test', $ceas ?? new CeasFals());
+    }
+
+    /** @param array{incercari?: int, intarziereInitialaMs?: int, intarziereMaximaMs?: int}|false $retry */
+    public static function client(
+        ClientFals $client,
+        ?CeasFals $ceas = null,
+        array|false $retry = ['incercari' => 3, 'intarziereInitialaMs' => 1, 'intarziereMaximaMs' => 5],
+    ): VerificRca {
+        $fabrica = new HttpFactory();
+
+        return new VerificRca(
+            apiKey: self::CHEIE,
+            retry: $retry,
+            httpClient: $client,
+            requestFactory: $fabrica,
+            streamFactory: $fabrica,
+            ceas: $ceas ?? new CeasFals(),
+        );
     }
 }
