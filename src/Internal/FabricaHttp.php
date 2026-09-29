@@ -32,10 +32,12 @@ final class FabricaHttp
                 'timeout' => $secunde,
                 'connect_timeout' => min($secunde, 10.0),
                 'http_errors' => false,
+                // Un redirect ar transforma POST-ul in GET si ar pierde cheia; il raportam ca eroare.
+                'allow_redirects' => false,
             ]);
         }
         if (class_exists(Psr18Client::class) && class_exists(HttpClient::class)) {
-            return new Psr18Client(HttpClient::create(['timeout' => $secunde, 'max_duration' => $secunde]));
+            return new Psr18Client(HttpClient::create(['timeout' => $secunde, 'max_duration' => $secunde, 'max_redirects' => 0]));
         }
         try {
             return Psr18ClientDiscovery::find();

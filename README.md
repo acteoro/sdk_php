@@ -214,7 +214,7 @@ if ($r instanceof VerificareInCurs) {
 
 ### `verificari->asteapta($referinta, ?OptiuniAsteptare $optiuni = null)`
 
-Face polling până la rezultatul final. Opțiuni: `intervalMs` (implicit 3000, minim 2000) și `timeoutMs` (implicit 5 minute). La depășire aruncă `EroareTimeoutVerificare`.
+Face polling până la rezultatul final. Opțiuni: `intervalMs` (implicit 3000, minim 2000) și `timeoutMs` (implicit 5 minute). La depășire aruncă `EroareTimeoutVerificare`. Reîncercările se opresc la termen, așa că doar o cerere HTTP deja pornită îl poate depăși, cu cel mult timeout-ul ei.
 
 ### `verificari->verificaSiAsteapta(CerereVerificare $cerere, ?OptiuniAsteptare $optiuni = null)`
 
@@ -406,6 +406,7 @@ SDK-ul nu trimite niciodată de două ori o verificare taxată.
 | Situație | GET / DELETE | POST |
 |---|---|---|
 | Rețea căzută, timeout | se reîncearcă | nu (cererea poate să fi ajuns) |
+| Redirect (3xx) | nu, `EroareHttp` cu `hint` spre adresa canonică | nu |
 | DNS, conexiune refuzată | se reîncearcă | se reîncearcă (sigur nu a ajuns) |
 | 502, 503, 504 | se reîncearcă | se reîncearcă (proxy, nu aplicația) |
 | 500 | se reîncearcă | nu |

@@ -188,6 +188,9 @@ final class Validare
             return null;
         }
         $url = trim($brut);
+        if (preg_match('//u', $url) !== 1) {
+            throw self::eroare('`callbackUrl` trebuie sa fie text UTF-8 valid.', 'callbackUrl');
+        }
         if (strlen($url) > 2000) {
             throw self::eroare('`callbackUrl` e prea lung (maxim 2000 de caractere).', 'callbackUrl');
         }

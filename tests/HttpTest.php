@@ -21,6 +21,7 @@ use VerificRca\Exception\EroareValidare;
 use VerificRca\Exception\VerificRcaException;
 use VerificRca\Internal\Decodor;
 use VerificRca\Internal\Erori;
+use VerificRca\Internal\FabricaHttp;
 use VerificRca\Internal\Http;
 use VerificRca\Internal\Raspuns;
 use VerificRca\Internal\SetariRetry;
@@ -288,5 +289,31 @@ final class HttpTest extends TestCase
 
         $this->expectException(EroareRaspunsInvalid::class);
         Http::decodeaza(new Raspuns(200, [], null), static fn(array $d): mixed => $d);
+    }
+
+    public function testCorpCuUtf8InvalidDevineEroareValidareFaraCerere(): void
+    {
+        $client = new ClientFals();
+        try {
+            (new Http(Ajutor::setari($client)))->trimite('POST', '/x', false, [], ['numarInmatriculare' => "B\xff"]);
+            self::fail('trebuia sa arunce');
+        } catch (EroareValidare $e) {
+            self::assertSame('VALIDARE_LOCALA', $e->cod);
+        }
+        self::assertCount(0, $client->cereri);
+    }
+
+    public function testRedirectulDevineEroareHttpCuHint(): void
+    {
+        $e = Erori::dinRaspuns(301, ['location' => 'https://www.verificrca.ro/api/public/v1/vehicule'], '', 0);
+        self::assertInstanceOf(EroareHttp::class, $e);
+        self::assertStringContainsString('https://www.verificrca.ro', (string) $e->hint);
+    }
+
+    public function testClientulConstruitDeSdkNuUrmeazaRedirecturi(): void
+    {
+        $client = FabricaHttp::client(null, 30000);
+        self::assertInstanceOf(\GuzzleHttp\Client::class, $client);
+        self::assertFalse($client->getConfig('allow_redirects'));
     }
 }

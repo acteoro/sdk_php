@@ -268,4 +268,37 @@ final class VerificariTest extends TestCase
         self::assertSame([3000, 3000, 1000], $ceas->somnuri);
         self::assertCount(3, $client->cereri);
     }
+
+    public function testAsteaptaNuDepasesteTermenulPrinReincercari(): void
+    {
+        $ceas = new CeasFals();
+        $client = new ClientFals(
+            ClientFals::raspuns(502),
+            ClientFals::raspuns(502),
+            ClientFals::raspuns(502),
+            ClientFals::raspuns(502),
+        );
+        $vrca = Ajutor::client($client, $ceas, ['incercari' => 3, 'intarziereInitialaMs' => 5000, 'intarziereMaximaMs' => 10000]);
+        try {
+            $vrca->verificari->asteapta(new ReferintaVerificare(TipVerificare::Rca, 'B123ABC'), new OptiuniAsteptare(timeoutMs: 7000));
+            self::fail('trebuia sa arunce');
+        } catch (EroareTimeoutVerificare $e) {
+            self::assertSame('TIMEOUT_VERIFICARE', $e->cod);
+            self::assertInstanceOf(EroareServer::class, $e->getPrevious());
+        }
+        self::assertLessThanOrEqual(7000, array_sum($ceas->somnuri));
+        self::assertCount(1, $client->cereri);
+    }
+
+    public function testCallbackUrlCuUtf8InvalidEsteEroareDeValidare(): void
+    {
+        $client = new ClientFals();
+        try {
+            Ajutor::client($client)->verificari->porneste(new CerereVerificare('rca', 'B123ABC', null, "https://example.com/\xff"));
+            self::fail('trebuia sa arunce');
+        } catch (EroareValidare $e) {
+            self::assertSame('callbackUrl', $e->camp);
+        }
+        self::assertCount(0, $client->cereri);
+    }
 }

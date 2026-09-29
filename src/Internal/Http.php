@@ -9,6 +9,8 @@ use VerificRca\Exception\EroareLimita;
 use VerificRca\Exception\EroareRaspunsInvalid;
 use VerificRca\Exception\EroareRetea;
 use VerificRca\Exception\EroareServer;
+use VerificRca\Exception\EroareTimeoutVerificare;
+use VerificRca\Exception\EroareValidare;
 use VerificRca\Exception\VerificRcaException;
 
 /** @internal Trimite cereri catre API, cu maparea erorilor si retry. */
@@ -26,8 +28,10 @@ final class Http
      * @param bool $idempotenta cererea poate fi repetata fara efecte in plus (GET, DELETE)
      * @param array<string, string|null> $query valorile null nu se trimit
      * @param array<string, mixed>|null $corp trimis ca JSON
+     * @param int|null $termenMs momentul (ms) dupa care nu mai reincercam; o pauza care l-ar
+     *   depasi opreste cererea cu `EroareTimeoutVerificare`
      */
-    public function trimite(string $metoda, string $cale, bool $idempotenta, array $query = [], ?array $corp = null): Raspuns
+    public function trimite(string $metoda, string $cale, bool $idempotenta, array $query = [], ?array $corp = null, ?int $termenMs = null): Raspuns
     {
         $incercare = 0;
         while (true) {
@@ -38,7 +42,11 @@ final class Http
                 if ($retry === null || $incercare >= $retry->incercari || !self::sePoateReincerca($idempotenta, $e, $retry)) {
                     throw $e;
                 }
-                $this->s->ceas->dormiMs(self::pauza($retry, $incercare, $e));
+                $pauza = self::pauza($retry, $incercare, $e);
+                if ($termenMs !== null && $this->s->ceas->acumMs() + $pauza >= $termenMs) {
+                    throw new EroareTimeoutVerificare('Termenul de asteptare a expirat in timpul reincercarilor.', cod: 'TIMEOUT_VERIFICARE', previous: $e);
+                }
+                $this->s->ceas->dormiMs($pauza);
                 ++$incercare;
             }
         }
@@ -127,7 +135,11 @@ final class Http
             ->withHeader('Accept', 'application/json')
             ->withHeader('User-Agent', $this->s->userAgent);
         if ($corp !== null) {
-            $json = json_encode($corp, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            try {
+                $json = json_encode($corp, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            } catch (\JsonException $e) {
+                throw new EroareValidare('Datele trimise contin text care nu e UTF-8 valid.', cod: 'VALIDARE_LOCALA', previous: $e);
+            }
             $cerere = $cerere
                 ->withHeader('Content-Type', 'application/json')
                 ->withBody($this->s->fluxuri->createStream($json));

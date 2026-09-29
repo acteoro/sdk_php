@@ -14,6 +14,7 @@ use VerificRca\Exception\EroarePlanInactiv;
 use VerificRca\Exception\EroareServer;
 use VerificRca\Exception\EroareValidare;
 use VerificRca\Exception\VerificRcaException;
+use VerificRca\VerificRca;
 
 /** @internal Transforma un raspuns non-2xx in eroarea tipata potrivita. */
 final class Erori
@@ -64,6 +65,18 @@ final class Erori
                     utilizareZi: $zi,
                     utilizareLuna: $luna,
                 );
+        }
+
+        if ($status >= 300 && $status < 400) {
+            $locatie = $headere['location'] ?? '';
+
+            return new EroareHttp(
+                $locatie !== '' ? "API-ul a raspuns cu redirect catre {$locatie}." : "API-ul a raspuns cu redirect (HTTP {$status}).",
+                $status,
+                $cod,
+                'Foloseste adresa canonica in `baseUrl`: ' . VerificRca::URL_IMPLICIT,
+                $corp,
+            );
         }
 
         return $status >= 500

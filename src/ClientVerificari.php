@@ -88,20 +88,15 @@ final class ClientVerificari
      */
     public function rezultat(ReferintaVerificare|VerificareInCurs $referinta): VerificareFinala|VerificareInCurs
     {
-        $raspuns = $this->http->trimite('GET', self::CALE, true, [
-            'tip' => $referinta->tip->value,
-            'query' => $referinta->query,
-            'serieSasiu' => $referinta->tip === TipVerificare::Rovinieta ? $referinta->serieSasiu : null,
-            'since' => $referinta->since !== null ? (string) $referinta->since : null,
-        ]);
-
-        return $this->interpreteaza($raspuns, $referinta->serieSasiu, $referinta->since);
+        return $this->interogheaza($referinta, null);
     }
 
     /**
      * Interogheaza periodic pana la rezultatul final. Nu consuma din cota.
      *
      * Implicit o interogare la 3 secunde (minim 2), timp de cel mult 5 minute.
+     * Reincercarile se opresc la termen; doar o cerere HTTP deja pornita il poate
+     * depasi, cu cel mult timeout-ul ei (`timeoutMs` din constructor).
      *
      * @throws EroareTimeoutVerificare rezultatul nu a venit in `timeoutMs`
      * @throws EroareVerificare sursa oficiala nu a putut fi interogata; reia cu `porneste()`
@@ -122,17 +117,17 @@ final class ClientVerificari
             if ($this->ceas->acumMs() >= $termen) {
                 break;
             }
-            $raspuns = $this->rezultat($referinta);
+            try {
+                $raspuns = $this->interogheaza($referinta, $termen);
+            } catch (EroareTimeoutVerificare $e) {
+                throw self::depasit($referinta, $optiuni, $e->getPrevious());
+            }
             if ($raspuns instanceof VerificareFinala) {
                 return $raspuns;
             }
         }
 
-        throw new EroareTimeoutVerificare(
-            "Verificarea {$referinta->tip->value} pentru {$referinta->query} nu s-a finalizat in "
-            . (int) round($optiuni->timeoutMs / 1000) . ' secunde.',
-            cod: 'TIMEOUT_VERIFICARE',
-        );
+        throw self::depasit($referinta, $optiuni, null);
     }
 
     /**
@@ -150,6 +145,28 @@ final class ClientVerificari
         $raspuns = $this->porneste($cerere);
 
         return $raspuns instanceof VerificareInCurs ? $this->asteapta($raspuns, $optiuni) : $raspuns;
+    }
+
+    private function interogheaza(ReferintaVerificare|VerificareInCurs $referinta, ?int $termenMs): VerificareFinala|VerificareInCurs
+    {
+        $raspuns = $this->http->trimite('GET', self::CALE, true, [
+            'tip' => $referinta->tip->value,
+            'query' => $referinta->query,
+            'serieSasiu' => $referinta->tip === TipVerificare::Rovinieta ? $referinta->serieSasiu : null,
+            'since' => $referinta->since !== null ? (string) $referinta->since : null,
+        ], null, $termenMs);
+
+        return $this->interpreteaza($raspuns, $referinta->serieSasiu, $referinta->since);
+    }
+
+    private static function depasit(ReferintaVerificare|VerificareInCurs $referinta, OptiuniAsteptare $optiuni, ?\Throwable $cauza): EroareTimeoutVerificare
+    {
+        return new EroareTimeoutVerificare(
+            "Verificarea {$referinta->tip->value} pentru {$referinta->query} nu s-a finalizat in "
+            . (int) round($optiuni->timeoutMs / 1000) . ' secunde.',
+            cod: 'TIMEOUT_VERIFICARE',
+            previous: $cauza,
+        );
     }
 
     private function interpreteaza(Raspuns $raspuns, ?string $serieSasiu, ?int $sinceImplicit): VerificareFinala|VerificareInCurs
