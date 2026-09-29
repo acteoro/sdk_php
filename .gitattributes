@@ -1,0 +1,11 @@
+/.github export-ignore
+/tests export-ignore
+/e2e export-ignore
+/examples export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/.php-cs-fixer.dist.php export-ignore
+/phpstan.neon export-ignore
+/phpunit.xml.dist export-ignore
+/phpunit.e2e.xml.dist export-ignore
+/.env.e2e.example export-ignore
