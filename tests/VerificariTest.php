@@ -106,9 +106,32 @@ final class VerificariTest extends TestCase
     public function testRovinietaPastreazaSerieSasiuPentruPolling(): void
     {
         $client = new ClientFals(ClientFals::raspuns(202, ['tip' => 'rovinieta', 'query' => 'B123ABC', 'status' => 'processing']));
-        $r = Ajutor::client($client)->verificari->porneste(new CerereVerificare(TipVerificare::Rovinieta, 'B123ABC', Ajutor::VIN));
+        $r = Ajutor::client($client)->verificari->porneste(new CerereVerificare(TipVerificare::Rovinieta, 'B123ABC', Ajutor::VIN, serieTalon: 'i00639603f'));
         self::assertInstanceOf(VerificareInCurs::class, $r);
         self::assertSame(Ajutor::VIN, $r->serieSasiu);
+        self::assertSame(
+            ['tip' => 'rovinieta', 'query' => 'B123ABC', 'serieSasiu' => Ajutor::VIN, 'serieTalon' => 'I00639603F'],
+            $client->corp(),
+        );
+    }
+
+    public function testSerieTalonNuSeTrimiteLaRca(): void
+    {
+        $client = new ClientFals(ClientFals::raspuns(202, self::IN_CURS));
+        Ajutor::client($client)->verificari->porneste(new CerereVerificare('rca', 'B123ABC', serieTalon: 'I00639603F'));
+        self::assertArrayNotHasKey('serieTalon', $client->corp());
+    }
+
+    public function testRovinietaFaraSerieTalonNuPleacaPeRetea(): void
+    {
+        $client = new ClientFals();
+        try {
+            Ajutor::client($client)->verificari->porneste(new CerereVerificare(TipVerificare::Rovinieta, 'B123ABC', Ajutor::VIN));
+            self::fail('trebuia sa arunce');
+        } catch (EroareValidare $e) {
+            self::assertSame('serieTalon', $e->camp);
+        }
+        self::assertCount(0, $client->cereri);
     }
 
     public function testValidareaLocalaNuTrimiteNimic(): void
@@ -216,6 +239,25 @@ final class VerificariTest extends TestCase
             self::assertSame('Verificarea nu s-a putut finaliza.', $e->getMessage());
             self::assertSame('VERIFICARE_ESUATA', $e->cod);
             self::assertSame('Reia verificarea.', $e->hint);
+            self::assertFalse($e->dateRespinse());
+        }
+    }
+
+    public function testStatusErrorCuCodSpuneCeDateAuFostRespinse(): void
+    {
+        $client = new ClientFals(ClientFals::raspuns(200, [
+            'tip' => 'rovinieta',
+            'query' => 'B123ABC',
+            'status' => 'error',
+            'error' => 'Numarul certificatului de inmatriculare nu corespunde vehiculului.',
+            'cod' => 'serie_talon_invalida',
+        ]));
+        try {
+            Ajutor::client($client)->verificari->rezultat(new ReferintaVerificare(TipVerificare::Rovinieta, 'B123ABC', Ajutor::VIN));
+            self::fail('trebuia sa arunce');
+        } catch (EroareVerificare $e) {
+            self::assertSame(EroareVerificare::SERIE_TALON_INVALIDA, $e->cod);
+            self::assertTrue($e->dateRespinse());
         }
     }
 

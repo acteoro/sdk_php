@@ -65,6 +65,9 @@ final class ClientVerificari
         if ($tinta->serieSasiu !== null) {
             $corp['serieSasiu'] = $tinta->serieSasiu;
         }
+        if ($tinta->serieTalon !== null) {
+            $corp['serieTalon'] = $tinta->serieTalon;
+        }
         if ($tinta->callbackUrl !== null) {
             $corp['callbackUrl'] = $tinta->callbackUrl;
         }
@@ -177,9 +180,10 @@ final class ClientVerificari
             $status = $d['status'] ?? null;
             if ($status === 'error') {
                 Decodor::enum($d, 'tip', '', TipVerificare::class);
+                // Cu `cod`, sursa a refuzat datele trimise si o reincercare nu ajuta.
                 throw new EroareVerificare(
                     Decodor::sir($d, 'error', ''),
-                    cod: 'VERIFICARE_ESUATA',
+                    cod: Decodor::sirOptional($d, 'cod', '') ?? EroareVerificare::VERIFICARE_ESUATA,
                     hint: Decodor::sirOptional($d, 'hint', ''),
                     raspuns: $d,
                 );

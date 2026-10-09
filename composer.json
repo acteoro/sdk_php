@@ -3,7 +3,7 @@
     "description": "SDK oficial PHP pentru API-ul verificrca.ro: verificare RCA, ITP, rovinieta si copie conforma ARR dupa numar de inmatriculare sau serie de sasiu (VIN), plus gestionarea flotei si webhook-uri.",
     "type": "library",
     "license": "MIT",
-    "keywords": ["verificrca", "verificare rca", "verificare itp", "verificare rovinieta", "copie conforma arr", "rca", "itp", "rovinieta", "asigurare auto", "romania", "flota", "webhook", "sdk", "api client", "psr-18"],
+    "keywords": ["verificrca", "verificare rca", "verificare itp", "verificare rovinieta", "copie conforma arr", "rca", "itp", "rovinieta", "certificat de inmatriculare", "asigurare auto", "romania", "flota", "webhook", "sdk", "api client", "psr-18"],
     "homepage": "https://www.verificrca.ro/api-acces",
     "support": {
         "issues": "https://github.com/verificrca/sdk_php/issues",

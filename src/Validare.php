@@ -24,6 +24,9 @@ final class Validare
     private const NUMAR_REGEX = '/^(B\d{2,3}[A-Z]{2,3}|(' . self::JUDETE . ')\d{2}[A-Z]{2,3}|CD\d{3}[A-Z]{1,3}|TC\d{4}[A-Z]{2})$/i';
     private const VIN_REGEX = '/^[A-HJ-NPR-Z0-9]{17}$/i';
     private const LUNGIME_VIN = 17;
+    private const SERIE_TALON_REGEX = '/^(?=.*\d)[A-Z0-9]{6,20}$/';
+    private const MESAJ_SERIE_TALON_INVALIDA = '`serieTalon` invalid: se asteapta numarul certificatului de inmatriculare, '
+        . 'tiparit jos pe talon (ex: I00639603F), adica 6-20 litere si cifre.';
 
     private function __construct() {}
 
@@ -58,6 +61,27 @@ final class Validare
     }
 
     /**
+     * Aduce numarul certificatului de inmatriculare (talon) la forma canonica:
+     * doar litere si cifre, cu majuscule.
+     *
+     * Exemplu: `Validare::normalizeazaSerieTalon(' i 00639603-f ')` intoarce `'I00639603F'`.
+     */
+    public static function normalizeazaSerieTalon(string $valoare): string
+    {
+        return (string) preg_replace('/[^A-Z0-9]/', '', strtoupper($valoare));
+    }
+
+    /**
+     * Verifica forma numarului certificatului de inmatriculare (talon), tiparit
+     * jos pe talon (ex: `I00639603F`): 6-20 litere si cifre, cel putin o cifra,
+     * dupa normalizare. Daca seria chiar apartine vehiculului afla doar sursa oficiala.
+     */
+    public static function esteSerieTalonValida(string $valoare): bool
+    {
+        return self::esteSerieTalon(self::normalizeazaSerieTalon($valoare));
+    }
+
+    /**
      * @internal Valideaza si normalizeaza o cerere de verificare.
      *
      * @throws EroareValidare
@@ -77,13 +101,23 @@ final class Validare
             self::normalizeaza($cerere->serieSasiu ?? ''),
         );
 
-        return new TintaVerificare($tip, $query, $serieSasiu, $queryPolling, self::valideazaCallbackUrl($cerere->callbackUrl));
+        // Seria talonului se trimite doar la rovinieta, singura verificare care o cere.
+        $serieTalon = $tip === TipVerificare::Rovinieta ? self::valideazaSerieTalonRovinieta($cerere->serieTalon) : null;
+
+        return new TintaVerificare(
+            $tip,
+            $query,
+            $serieSasiu,
+            $queryPolling,
+            self::valideazaCallbackUrl($cerere->callbackUrl),
+            $serieTalon,
+        );
     }
 
     /**
      * @internal Valideaza un vehicul nou cu regulile API-ului: cel putin un identificator.
      *
-     * @return array{numarInmatriculare?: string, serieSasiu?: string, arrMonitorizat?: bool}
+     * @return array{numarInmatriculare?: string, serieSasiu?: string, serieTalon?: string, arrMonitorizat?: bool}
      *
      * @throws EroareValidare
      */
@@ -111,6 +145,13 @@ final class Validare
         }
         if ($serieNormalizata !== '') {
             $corp['serieSasiu'] = $serieNormalizata;
+        }
+        $serieTalon = self::normalizeazaSerieTalon($vehicul->serieTalon ?? '');
+        if ($serieTalon !== '') {
+            if (!self::esteSerieTalon($serieTalon)) {
+                throw self::eroare(self::MESAJ_SERIE_TALON_INVALIDA, 'serieTalon');
+            }
+            $corp['serieTalon'] = $serieTalon;
         }
         if ($vehicul->arrMonitorizat !== null) {
             $corp['arrMonitorizat'] = $vehicul->arrMonitorizat;
@@ -182,6 +223,22 @@ final class Validare
         }
     }
 
+    private static function valideazaSerieTalonRovinieta(?string $brut): string
+    {
+        $serie = self::normalizeazaSerieTalon($brut ?? '');
+        if ($serie === '') {
+            throw self::eroare(
+                'Verificarea rovinietei cere si numarul certificatului de inmatriculare (talon) in `serieTalon`, de forma I00639603F.',
+                'serieTalon',
+            );
+        }
+        if (!self::esteSerieTalon($serie)) {
+            throw self::eroare(self::MESAJ_SERIE_TALON_INVALIDA, 'serieTalon');
+        }
+
+        return $serie;
+    }
+
     private static function valideazaCallbackUrl(?string $brut): ?string
     {
         if ($brut === null || trim($brut) === '') {
@@ -222,6 +279,11 @@ final class Validare
     private static function esteNumar(string $normalizat): bool
     {
         return preg_match(self::NUMAR_REGEX, $normalizat) === 1;
+    }
+
+    private static function esteSerieTalon(string $normalizat): bool
+    {
+        return preg_match(self::SERIE_TALON_REGEX, $normalizat) === 1;
     }
 
     private static function esteVin(string $normalizat): bool

@@ -95,10 +95,53 @@ final class ValidareTest extends TestCase
 
     public function testRovinietaCereSiVin(): void
     {
-        self::assertSame('serieSasiu', $this->eroare(new CerereVerificare(TipVerificare::Rovinieta, 'B123ABC'))->camp);
-        $t = Validare::valideazaCerereVerificare(new CerereVerificare(TipVerificare::Rovinieta, 'B123ABC', self::VIN));
+        self::assertSame('serieSasiu', $this->eroare(new CerereVerificare(TipVerificare::Rovinieta, 'B123ABC', serieTalon: 'I00639603F'))->camp);
+        $t = Validare::valideazaCerereVerificare(new CerereVerificare(TipVerificare::Rovinieta, 'B123ABC', self::VIN, serieTalon: 'I00639603F'));
         self::assertSame('B123ABC', $t->queryPolling);
         self::assertSame(self::VIN, $t->serieSasiu);
+        self::assertSame('I00639603F', $t->serieTalon);
+    }
+
+    public function testRovinietaCereSerieTalon(): void
+    {
+        $e = $this->eroare(new CerereVerificare(TipVerificare::Rovinieta, 'B123ABC', self::VIN));
+        self::assertSame('serieTalon', $e->camp);
+        self::assertStringContainsString('certificatului de inmatriculare', $e->getMessage());
+        self::assertSame('serieTalon', $this->eroare(new CerereVerificare(TipVerificare::Rovinieta, 'B123ABC', self::VIN, serieTalon: ' - '))->camp);
+    }
+
+    public function testRovinietaNormalizeazaSerieTalon(): void
+    {
+        $t = Validare::valideazaCerereVerificare(new CerereVerificare('rovinieta', 'B123ABC', self::VIN, serieTalon: ' i 00639603-f '));
+        self::assertSame('I00639603F', $t->serieTalon);
+    }
+
+    /** @return iterable<string, array{string}> */
+    public static function seriiTalonInvalide(): iterable
+    {
+        yield 'prea scurta' => ['I0063'];
+        yield 'prea lunga' => [str_repeat('A1', 11)];
+        yield 'fara cifre' => ['ABCDEFGH'];
+    }
+
+    #[DataProvider('seriiTalonInvalide')]
+    public function testRovinietaRespingeSerieTalon(string $serie): void
+    {
+        $e = $this->eroare(new CerereVerificare(TipVerificare::Rovinieta, 'B123ABC', self::VIN, serieTalon: $serie));
+        self::assertSame('serieTalon', $e->camp);
+        self::assertFalse(Validare::esteSerieTalonValida($serie));
+    }
+
+    public function testSerieTalonIgnorataLaCelelalteVerificari(): void
+    {
+        self::assertNull(Validare::valideazaCerereVerificare(new CerereVerificare('rca', 'B123ABC', serieTalon: 'x'))->serieTalon);
+    }
+
+    public function testEsteSerieTalonValida(): void
+    {
+        self::assertTrue(Validare::esteSerieTalonValida('I00639603F'));
+        self::assertTrue(Validare::esteSerieTalonValida('i 006-39603f'));
+        self::assertSame('I00639603F', Validare::normalizeazaSerieTalon(' i 00639603-f '));
     }
 
     public function testArrNuAcceptaVin(): void
@@ -156,6 +199,21 @@ final class ValidareTest extends TestCase
             ['serieSasiu' => self::VIN, 'arrMonitorizat' => false],
             Validare::valideazaVehiculNou(new VehiculNou(null, self::VIN, false)),
         );
+    }
+
+    public function testVehiculNouCuSerieTalon(): void
+    {
+        self::assertSame(
+            ['numarInmatriculare' => 'B123ABC', 'serieSasiu' => self::VIN, 'serieTalon' => 'I00639603F'],
+            Validare::valideazaVehiculNou(new VehiculNou('B123ABC', self::VIN, serieTalon: 'i00639603f')),
+        );
+        self::assertArrayNotHasKey('serieTalon', Validare::valideazaVehiculNou(new VehiculNou('B123ABC', serieTalon: '  ')));
+        try {
+            Validare::valideazaVehiculNou(new VehiculNou('B123ABC', serieTalon: 'ABCDEFGH'));
+            self::fail('trebuia sa arunce');
+        } catch (EroareValidare $e) {
+            self::assertSame('serieTalon', $e->camp);
+        }
     }
 
     public function testVehiculNouRespingeCaractere(): void

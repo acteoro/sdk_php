@@ -112,6 +112,28 @@ final class ModeleTest extends TestCase
         self::assertNull($v->itpExpiraLa);
         self::assertTrue($v->activ);
         self::assertFalse($v->arrMonitorizat);
+        self::assertNull($v->serieTalon);
+        self::assertFalse($v->serieTalonRespinsa);
+    }
+
+    public function testVehiculCuSerieTalonRespinsa(): void
+    {
+        $v = Vehicul::fromArray([
+            'id' => '6f2c1b9e-0000-4000-8000-000000000001',
+            'numarInmatriculare' => 'B123ABC',
+            'serieSasiu' => 'WVWZZZ1JZXW000001',
+            'serieTalon' => 'I00639603F',
+            'serieTalonRespinsa' => true,
+            'rcaExpiraLa' => null,
+            'itpExpiraLa' => null,
+            'rovinietaExpiraLa' => null,
+            'arrExpiraLa' => null,
+            'arrMonitorizat' => false,
+            'activ' => true,
+            'createdAt' => '2026-09-01T08:00:00.000Z',
+        ]);
+        self::assertSame('I00639603F', $v->serieTalon);
+        self::assertTrue($v->serieTalonRespinsa);
     }
 
     public function testVerificareInCursSeSerializeazaSiSeReface(): void

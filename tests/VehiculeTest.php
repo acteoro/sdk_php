@@ -70,6 +70,16 @@ final class VehiculeTest extends TestCase
         self::assertSame(['numarInmatriculare' => 'B123ABC', 'arrMonitorizat' => false], $client->corp());
     }
 
+    public function testAdaugaTrimiteSerieTalon(): void
+    {
+        $client = new ClientFals(ClientFals::raspuns(201, ['vehicul' => self::VEHICUL + ['serieTalon' => 'I00639603F', 'serieTalonRespinsa' => false]]));
+        $v = Ajutor::client($client)->vehicule->adauga(new VehiculNou('B123ABC', Ajutor::VIN, serieTalon: 'i00639603f'));
+
+        self::assertSame(['numarInmatriculare' => 'B123ABC', 'serieSasiu' => Ajutor::VIN, 'serieTalon' => 'I00639603F'], $client->corp());
+        self::assertSame('I00639603F', $v->serieTalon);
+        self::assertFalse($v->serieTalonRespinsa);
+    }
+
     public function testAdaugaValideazaLocal(): void
     {
         $client = new ClientFals();

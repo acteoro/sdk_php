@@ -46,7 +46,7 @@ echo $rca->status->value, ' ', $rca->expiresAt?->format('Y-m-d'); // valid 2027-
 | Verificare copie conformă ARR | Valabilitatea copiei conforme pentru transportatori |
 | Gestionare flotă | Adaugi, listezi și ștergi vehiculele monitorizate automat |
 | Webhook-uri | Rezultatul verificării la URL-ul tău, alerte `document.expira` la 30, 14 și 3 zile |
-| Validare locală | Numărul de înmatriculare și VIN-ul sunt verificate înainte de cerere, deci o greșeală de tastare nu consumă din cotă |
+| Validare locală | Numărul de înmatriculare, VIN-ul și numărul talonului sunt verificate înainte de cerere, deci o greșeală de tastare nu consumă din cotă |
 | Excepții tipate | O clasă de excepție pentru fiecare situație, cu mesaj în română și `hint` de rezolvare |
 | Reîncercări sigure | Backoff exponențial cu jitter, `Retry-After` respectat, niciun POST taxat de două ori |
 
@@ -113,8 +113,11 @@ $rovinieta = $vrca->verificari->verificaSiAsteapta(new CerereVerificare(
     tip: TipVerificare::Rovinieta,
     query: 'B123ABC',
     serieSasiu: 'WVWZZZ1JZXW000001',
+    serieTalon: 'I00639603F',
 ));
 ```
+
+Rovinieta cere trei date: numărul de înmatriculare, seria de șasiu și numărul certificatului de înmatriculare (`serieTalon`), tipărit jos pe talon. Sursa le verifică împreună. Spațiile, cratimele și literele mici din `serieTalon` sunt normalizate automat, deci `i 00639603-f` devine `I00639603F`.
 
 ### Verificare copie conformă ARR
 
@@ -128,14 +131,14 @@ Poți da `tip` și ca text (`'rca'`, `'itp'`, `'rovinieta'`, `'arr'`), de exempl
 
 Fiecare sursă oficială caută după alt identificator. SDK-ul aplică aceleași reguli ca API-ul și te oprește înainte de cerere dacă lipsește ceva.
 
-| `tip` | `query` | `serieSasiu` | Sursa |
-|---|---|---|---|
-| `rca` | număr de înmatriculare **sau** VIN | opțional, recomandat | AIDA / BAAR |
-| `itp` | VIN (17 caractere) | nu | RAR |
-| `rovinieta` | număr de înmatriculare | **obligatoriu** | CNAIR |
-| `arr` | număr de înmatriculare | nu | ARR |
+| `tip` | `query` | `serieSasiu` | `serieTalon` | Sursa |
+|---|---|---|---|---|
+| `rca` | număr de înmatriculare **sau** VIN | opțional, recomandat | nu | AIDA / BAAR |
+| `itp` | VIN (17 caractere) | nu | nu | RAR |
+| `rovinieta` | număr de înmatriculare | **obligatoriu** | **obligatoriu** | CNAIR |
+| `arr` | număr de înmatriculare | nu | nu | ARR |
 
-Formatele de număr acceptate: București (`B123ABC`, `B12ABC`), județe (`CJ45XYZ`, `IS08BCD`), corp diplomatic (`CD123A`) și numere temporare (`TC1234AB`). Spațiile și cratimele sunt eliminate automat, deci `b-123 abc` devine `B123ABC`. VIN-ul trebuie să aibă exact 17 caractere, fără literele I, O și Q (standardul ISO 3779).
+Formatele de număr acceptate: București (`B123ABC`, `B12ABC`), județe (`CJ45XYZ`, `IS08BCD`), corp diplomatic (`CD123A`) și numere temporare (`TC1234AB`). Spațiile și cratimele sunt eliminate automat, deci `b-123 abc` devine `B123ABC`. VIN-ul trebuie să aibă exact 17 caractere, fără literele I, O și Q (standardul ISO 3779). Numărul certificatului de înmatriculare (`serieTalon`) are între 6 și 20 de litere și cifre, cu cel puțin o cifră (ex: `I00639603F`); la celelalte verificări în afară de rovinietă e ignorat.
 
 ## Cum decurge o verificare
 
@@ -222,7 +225,7 @@ Face polling până la rezultatul final. Opțiuni: `intervalMs` (implicit 3000, 
 
 ### `vehicule->lista()`
 
-Toate vehiculele din cont, cu datele de expirare `rcaExpiraLa`, `itpExpiraLa`, `rovinietaExpiraLa` și `arrExpiraLa` (ca `DateTimeImmutable` sau `null`). Câmpul `activ` e `true` cât timp vehiculul e verificat automat și primește notificări de expirare. Vehiculele din cont sunt verificate automat și periodic, deci lista îți dă o imagine la zi a flotei fără să consume din cota de verificări.
+Toate vehiculele din cont, cu datele de expirare `rcaExpiraLa`, `itpExpiraLa`, `rovinietaExpiraLa` și `arrExpiraLa` (ca `DateTimeImmutable` sau `null`). Câmpul `activ` e `true` cât timp vehiculul e verificat automat și primește notificări de expirare. `serieTalon` e numărul certificatului de înmatriculare salvat pe vehicul (sau `null`), iar `serieTalonRespinsa` devine `true` când sursa l-a respins: rovinieta nu se mai verifică până îl corectezi. Vehiculele din cont sunt verificate automat și periodic, deci lista îți dă o imagine la zi a flotei fără să consume din cota de verificări.
 
 ```php
 use VerificRca\Cerere\VehiculNou;
@@ -231,13 +234,17 @@ foreach ($vrca->vehicule->lista() as $v) {
     echo $v->numarInmatriculare, ' RCA: ', $v->rcaExpiraLa?->format('d.m.Y') ?? '-', PHP_EOL;
 }
 
-$v = $vrca->vehicule->adauga(new VehiculNou(numarInmatriculare: 'B123ABC', serieSasiu: 'WVWZZZ1JZXW000001'));
+$v = $vrca->vehicule->adauga(new VehiculNou(
+    numarInmatriculare: 'B123ABC',
+    serieSasiu: 'WVWZZZ1JZXW000001',
+    serieTalon: 'I00639603F', // fără el rovinieta nu se verifică
+));
 $vrca->vehicule->sterge($v->id);
 ```
 
 ### `vehicule->adauga(VehiculNou $vehicul)`
 
-Adaugă un vehicul în monitorizare. Trimite cel puțin un identificator (`numarInmatriculare`, `serieSasiu`); opțional `arrMonitorizat`. Poți primi `EroareInterzis` cu `cod` `LIMIT_ATINS` când ai atins numărul de mașini din plan, sau `EroareConflict` când vehiculul există deja.
+Adaugă un vehicul în monitorizare. Trimite cel puțin un identificator (`numarInmatriculare`, `serieSasiu`); opțional `serieTalon` (numărul certificatului de înmatriculare, necesar pentru rovinietă) și `arrMonitorizat`. `serieTalon` e normalizat și validat local, ca la verificări. Poți primi `EroareInterzis` cu `cod` `LIMIT_ATINS` când ai atins numărul de mașini din plan, sau `EroareConflict` când vehiculul există deja.
 
 ### `vehicule->sterge(string $id)`
 
@@ -253,6 +260,8 @@ use VerificRca\Validare;
 Validare::esteNumarInmatriculareValid('CJ 45 XYZ'); // true
 Validare::esteVinValid('WVWZZZ1JZXW00000I');        // false: litera I nu e permisă în VIN
 Validare::normalizeaza(' b-123 abc ');              // 'B123ABC'
+Validare::esteSerieTalonValida('I00639603F');       // true
+Validare::normalizeazaSerieTalon(' i 00639603-f '); // 'I00639603F'
 ```
 
 Le poți folosi pentru formularele tale, ca să validezi datele înainte să ajungă la server.
@@ -371,7 +380,7 @@ Toate excepțiile moștenesc `VerificRcaException`, care la rândul ei moștene�
 | `EroareHttp` | Alt status HTTP neașteptat | `status` |
 | `EroareRetea` | Fără răspuns sau timeout | `timeout`, `neajunsa` |
 | `EroareRaspunsInvalid` | Răspuns cu formă neașteptată | `raspuns` |
-| `EroareVerificare` | Sursa oficială nu a putut fi interogată | |
+| `EroareVerificare` | Sursa oficială nu a răspuns la timp sau a refuzat datele trimise | `cod`, `dateRespinse()` |
 | `EroareTimeoutVerificare` | `asteapta()` a depășit `timeoutMs` | |
 | `EroareWebhook` | Cheie greșită sau payload invalid | `cod` |
 
@@ -394,6 +403,32 @@ try {
 } catch (VerificRcaException $e) {
     $logger->error($e->getMessage(), ['cod' => $e->cod, 'hint' => $e->hint]);
     throw $e;
+}
+```
+
+### Verificare încheiată cu eroare
+
+`EroareVerificare` are `cod` `VERIFICARE_ESUATA` când sursa oficială nu a răspuns la timp; atunci reiei cu o cerere nouă. Când sursa a refuzat datele trimise, `cod` spune ce dată a fost refuzată și o reîncercare cu aceleași date dă același rezultat:
+
+| `cod` | Ce corectezi |
+|---|---|
+| `serie_talon_invalida` | numărul certificatului de înmatriculare (`serieTalon`) |
+| `vin_invalid` | seria de șasiu (`serieSasiu`) |
+| `numar_invalid` | numărul de înmatriculare |
+
+```php
+use VerificRca\Exception\EroareVerificare;
+
+try {
+    $r = $vrca->verificari->verificaSiAsteapta($cerere);
+} catch (EroareVerificare $e) {
+    if ($e->cod === EroareVerificare::SERIE_TALON_INVALIDA) {
+        return cereDinNouSeriaTalonului($e->getMessage());
+    }
+    if ($e->dateRespinse()) {
+        return arataUtilizatorului($e->getMessage());
+    }
+    reiaMaiTarziu($cerere); // VERIFICARE_ESUATA
 }
 ```
 
@@ -467,6 +502,14 @@ Instalezi pachetul cu `composer require verificrca/sdk`, creezi un client cu che
 ### Pot verifica ITP-ul după numărul de înmatriculare?
 
 Nu. RAR caută inspecția tehnică periodică doar după seria de șasiu (VIN), așa că SDK-ul respinge cererea înainte să plece, fără să consume din cotă. VIN-ul îl găsești în talon, la rubrica E.
+
+### Unde găsesc numărul certificatului de înmatriculare?
+
+E tipărit jos pe talon (certificatul de înmatriculare), la „Numărul certificatului”, și arată ca `I00639603F`. Nu îl confunda cu seria de șasiu (VIN, rubrica E) sau cu numărul de înmatriculare. Îl trimiți în `serieTalon` la verificarea rovinietei și, ca să fie monitorizată automat rovinieta, la `vehicule->adauga()`.
+
+### Cum verific rovinieta unei mașini din PHP?
+
+Apelezi `verificaSiAsteapta()` cu `TipVerificare::Rovinieta`, numărul de înmatriculare în `query`, VIN-ul în `serieSasiu` și numărul certificatului de înmatriculare în `serieTalon`. Dacă lipsește una dintre ele, SDK-ul aruncă `EroareValidare` înainte de cerere, fără să consume din cotă. Pentru o verificare manuală, folosește pagina de [verificare rovinietă](https://www.verificrca.ro/verificare-rovinieta).
 
 ### De unde vin datele?
 

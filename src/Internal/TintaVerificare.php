@@ -15,5 +15,6 @@ final class TintaVerificare
         public readonly ?string $serieSasiu,
         public readonly string $queryPolling,
         public readonly ?string $callbackUrl,
+        public readonly ?string $serieTalon = null,
     ) {}
 }
