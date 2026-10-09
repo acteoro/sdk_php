@@ -183,9 +183,10 @@ final class ClientVerificari
                 // Cu `cod`, sursa a refuzat datele trimise si o reincercare nu ajuta.
                 throw new EroareVerificare(
                     Decodor::sir($d, 'error', ''),
-                    cod: Decodor::sirOptional($d, 'cod', '') ?? EroareVerificare::VERIFICARE_ESUATA,
+                    cod: 'VERIFICARE_ESUATA',
                     hint: Decodor::sirOptional($d, 'hint', ''),
                     raspuns: $d,
+                    codSursa: Decodor::sirOptional($d, 'cod', ''),
                 );
             }
             if ($status === VerificareInCurs::STATUS) {

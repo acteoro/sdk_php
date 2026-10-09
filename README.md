@@ -380,7 +380,7 @@ Toate excepțiile moștenesc `VerificRcaException`, care la rândul ei moștene�
 | `EroareHttp` | Alt status HTTP neașteptat | `status` |
 | `EroareRetea` | Fără răspuns sau timeout | `timeout`, `neajunsa` |
 | `EroareRaspunsInvalid` | Răspuns cu formă neașteptată | `raspuns` |
-| `EroareVerificare` | Sursa oficială nu a răspuns la timp sau a refuzat datele trimise | `cod`, `dateRespinse()` |
+| `EroareVerificare` | Sursa oficială nu a răspuns la timp sau a refuzat datele trimise | `codSursa` |
 | `EroareTimeoutVerificare` | `asteapta()` a depășit `timeoutMs` | |
 | `EroareWebhook` | Cheie greșită sau payload invalid | `cod` |
 
@@ -408,9 +408,9 @@ try {
 
 ### Verificare încheiată cu eroare
 
-`EroareVerificare` are `cod` `VERIFICARE_ESUATA` când sursa oficială nu a răspuns la timp; atunci reiei cu o cerere nouă. Când sursa a refuzat datele trimise, `cod` spune ce dată a fost refuzată și o reîncercare cu aceleași date dă același rezultat:
+`EroareVerificare` are mereu `cod` `VERIFICARE_ESUATA`. Dacă `codSursa` e `null`, sursa oficială nu a răspuns la timp și reiei cu o cerere nouă. Când sursa a refuzat datele trimise, `codSursa` spune ce dată a fost refuzată, iar o reîncercare cu aceleași date dă același rezultat:
 
-| `cod` | Ce corectezi |
+| `codSursa` | Ce corectezi |
 |---|---|
 | `serie_talon_invalida` | numărul certificatului de înmatriculare (`serieTalon`) |
 | `vin_invalid` | seria de șasiu (`serieSasiu`) |
@@ -422,13 +422,13 @@ use VerificRca\Exception\EroareVerificare;
 try {
     $r = $vrca->verificari->verificaSiAsteapta($cerere);
 } catch (EroareVerificare $e) {
-    if ($e->cod === EroareVerificare::SERIE_TALON_INVALIDA) {
+    if ($e->codSursa === 'serie_talon_invalida') {
         return cereDinNouSeriaTalonului($e->getMessage());
     }
-    if ($e->dateRespinse()) {
+    if ($e->codSursa !== null) {
         return arataUtilizatorului($e->getMessage());
     }
-    reiaMaiTarziu($cerere); // VERIFICARE_ESUATA
+    reiaMaiTarziu($cerere); // sursa nu a răspuns la timp
 }
 ```
 

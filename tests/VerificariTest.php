@@ -239,7 +239,7 @@ final class VerificariTest extends TestCase
             self::assertSame('Verificarea nu s-a putut finaliza.', $e->getMessage());
             self::assertSame('VERIFICARE_ESUATA', $e->cod);
             self::assertSame('Reia verificarea.', $e->hint);
-            self::assertFalse($e->dateRespinse());
+            self::assertNull($e->codSursa);
         }
     }
 
@@ -256,8 +256,8 @@ final class VerificariTest extends TestCase
             Ajutor::client($client)->verificari->rezultat(new ReferintaVerificare(TipVerificare::Rovinieta, 'B123ABC', Ajutor::VIN));
             self::fail('trebuia sa arunce');
         } catch (EroareVerificare $e) {
-            self::assertSame(EroareVerificare::SERIE_TALON_INVALIDA, $e->cod);
-            self::assertTrue($e->dateRespinse());
+            self::assertSame('VERIFICARE_ESUATA', $e->cod);
+            self::assertSame('serie_talon_invalida', $e->codSursa);
         }
     }
 
