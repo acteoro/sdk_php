@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Enum;
+namespace Acteo\Enum;
 
 /** Tipurile de verificare: RCA (AIDA/BAAR), ITP (RAR), rovinieta (CNAIR), ARR (copie conforma). */
 enum TipVerificare: string

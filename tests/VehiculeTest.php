@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Tests;
+namespace Acteo\Tests;
 
+use Acteo\Cerere\VehiculNou;
+use Acteo\Exception\EroareConflict;
+use Acteo\Exception\EroareInterzis;
+use Acteo\Exception\EroareNegasit;
+use Acteo\Exception\EroareRaspunsInvalid;
+use Acteo\Exception\EroareServer;
+use Acteo\Exception\EroareValidare;
+use Acteo\Tests\Ajutor\Ajutor;
+use Acteo\Tests\Ajutor\ClientFals;
 use PHPUnit\Framework\TestCase;
-use VerificRca\Cerere\VehiculNou;
-use VerificRca\Exception\EroareConflict;
-use VerificRca\Exception\EroareInterzis;
-use VerificRca\Exception\EroareNegasit;
-use VerificRca\Exception\EroareRaspunsInvalid;
-use VerificRca\Exception\EroareServer;
-use VerificRca\Exception\EroareValidare;
-use VerificRca\Tests\Ajutor\Ajutor;
-use VerificRca\Tests\Ajutor\ClientFals;
 
 final class VehiculeTest extends TestCase
 {
@@ -68,6 +68,16 @@ final class VehiculeTest extends TestCase
         self::assertSame(self::VEHICUL['id'], $v->id);
         self::assertSame('POST', $client->cerere()->getMethod());
         self::assertSame(['numarInmatriculare' => 'B123ABC', 'arrMonitorizat' => false], $client->corp());
+    }
+
+    public function testAdaugaTrimiteSerieTalon(): void
+    {
+        $client = new ClientFals(ClientFals::raspuns(201, ['vehicul' => self::VEHICUL + ['serieTalon' => 'I00639603F', 'serieTalonRespinsa' => false]]));
+        $v = Ajutor::client($client)->vehicule->adauga(new VehiculNou('B123ABC', Ajutor::VIN, serieTalon: 'i00639603f'));
+
+        self::assertSame(['numarInmatriculare' => 'B123ABC', 'serieSasiu' => Ajutor::VIN, 'serieTalon' => 'I00639603F'], $client->corp());
+        self::assertSame('I00639603F', $v->serieTalon);
+        self::assertFalse($v->serieTalonRespinsa);
     }
 
     public function testAdaugaValideazaLocal(): void

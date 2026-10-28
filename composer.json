@@ -1,17 +1,43 @@
 {
-    "name": "verificrca/sdk",
-    "description": "SDK oficial PHP pentru API-ul verificrca.ro: verificare RCA, ITP, rovinieta si copie conforma ARR dupa numar de inmatriculare sau serie de sasiu (VIN), plus gestionarea flotei si webhook-uri.",
+    "name": "acteo/api",
+    "description": "SDK oficial PHP pentru API-ul public Acteo: verificare RCA, ITP, rovinieta si copie conforma ARR dupa numar de inmatriculare sau serie de sasiu (VIN), plus gestionarea flotei si webhook-uri.",
     "type": "library",
     "license": "MIT",
-    "keywords": ["verificrca", "verificare rca", "verificare itp", "verificare rovinieta", "copie conforma arr", "rca", "itp", "rovinieta", "asigurare auto", "romania", "flota", "webhook", "sdk", "api client", "psr-18"],
-    "homepage": "https://www.verificrca.ro/api-acces",
+    "keywords": [
+        "acteo",
+        "verificrca",
+        "verificare rca",
+        "verificare itp",
+        "verificare rovinieta",
+        "copie conforma arr",
+        "rca",
+        "itp",
+        "rovinieta",
+        "certificat de inmatriculare",
+        "asigurare auto",
+        "romania",
+        "flota",
+        "webhook",
+        "sdk",
+        "api client",
+        "psr-18",
+        "vehicle insurance check",
+        "vehicle inspection",
+        "road tax",
+        "vin"
+    ],
+    "homepage": "https://acteo.ro/api-acces",
     "support": {
-        "issues": "https://github.com/verificrca/sdk_php/issues",
-        "source": "https://github.com/verificrca/sdk_php",
-        "email": "contact@verificrca.ro"
+        "issues": "https://github.com/acteoro/sdk_php/issues",
+        "source": "https://github.com/acteoro/sdk_php",
+        "email": "contact@acteo.ro"
     },
     "authors": [
-        {"name": "verificrca", "email": "contact@verificrca.ro", "homepage": "https://www.verificrca.ro"}
+        {
+            "name": "Acteo.ro",
+            "email": "contact@acteo.ro",
+            "homepage": "https://acteo.ro"
+        }
     ],
     "require": {
         "php": "^8.1",
@@ -32,10 +58,18 @@
         "symfony/http-client": "Alternativa la Guzzle, tot cu timeoutMs aplicat"
     },
     "autoload": {
-        "psr-4": {"VerificRca\\": "src/"}
+        "psr-4": {
+            "Acteo\\": "src/"
+        },
+        "files": [
+            "src/aliasuri-verificrca.php"
+        ]
     },
     "autoload-dev": {
-        "psr-4": {"VerificRca\\Tests\\": "tests/", "VerificRca\\E2e\\": "e2e/"}
+        "psr-4": {
+            "Acteo\\Tests\\": "tests/",
+            "Acteo\\E2e\\": "e2e/"
+        }
     },
     "scripts": {
         "test": "phpunit",
@@ -43,12 +77,20 @@
         "stan": "phpstan analyse --memory-limit=1G",
         "cs": "php-cs-fixer fix --dry-run --diff",
         "cs:fix": "php-cs-fixer fix",
-        "verifica": ["@cs", "@stan", "@test"]
+        "verifica": [
+            "@cs",
+            "@stan",
+            "@test"
+        ]
     },
     "config": {
         "sort-packages": true,
-        "platform": {"php": "8.1.0"},
-        "allow-plugins": {"php-http/discovery": false}
+        "platform": {
+            "php": "8.1.0"
+        },
+        "allow-plugins": {
+            "php-http/discovery": false
+        }
     },
     "minimum-stability": "stable"
 }

@@ -2,17 +2,19 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Tests\Ajutor;
+namespace Acteo\Tests\Ajutor;
 
+use Acteo\Acteo;
+use Acteo\Internal\Setari;
+use Acteo\Internal\SetariRetry;
+use Acteo\VerificRca;
 use GuzzleHttp\Psr7\HttpFactory;
-use VerificRca\Internal\Setari;
-use VerificRca\Internal\SetariRetry;
-use VerificRca\VerificRca;
 
 final class Ajutor
 {
     public const CHEIE = 'vrca_test_0123456789abcdef';
     public const VIN = 'WVWZZZ1JZXW000001';
+    public const SERIE_TALON = 'I00639603F';
     public const REZULTAT_VALID = [
         'tip' => 'rca',
         'query' => 'B123ABC',
@@ -39,6 +41,24 @@ final class Ajutor
         $fabrica = new HttpFactory();
 
         return new VerificRca(
+            apiKey: self::CHEIE,
+            retry: $retry,
+            httpClient: $client,
+            requestFactory: $fabrica,
+            streamFactory: $fabrica,
+            ceas: $ceas ?? new CeasFals(),
+        );
+    }
+
+    /** @param array{incercari?: int, intarziereInitialaMs?: int, intarziereMaximaMs?: int}|false $retry */
+    public static function acteo(
+        ClientFals $client,
+        ?CeasFals $ceas = null,
+        array|false $retry = ['incercari' => 3, 'intarziereInitialaMs' => 1, 'intarziereMaximaMs' => 5],
+    ): Acteo {
+        $fabrica = new HttpFactory();
+
+        return new Acteo(
             apiKey: self::CHEIE,
             retry: $retry,
             httpClient: $client,

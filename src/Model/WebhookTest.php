@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Model;
+namespace Acteo\Model;
 
-use VerificRca\Internal\Decodor;
+use Acteo\Internal\Decodor;
 
 /** Evenimentul `webhook.test`, trimis din butonul de test din dashboard. */
 final class WebhookTest

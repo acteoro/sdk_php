@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Internal;
+namespace Acteo\Internal;
 
 /** @internal */
 final class CeasSistem implements Ceas

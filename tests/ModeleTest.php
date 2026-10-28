@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Tests;
+namespace Acteo\Tests;
 
+use Acteo\Enum\StatusDocument;
+use Acteo\Enum\StatusWebhook;
+use Acteo\Enum\TipVerificare;
+use Acteo\Exception\EroareValidare;
+use Acteo\Internal\Decodor;
+use Acteo\Internal\FormaInvalida;
+use Acteo\Model\Vehicul;
+use Acteo\Model\VerificareFinala;
+use Acteo\Model\VerificareInCurs;
+use Acteo\Model\WebhookDocumentExpira;
+use Acteo\Model\WebhookRezultat;
+use Acteo\Model\WebhookTest;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use VerificRca\Enum\StatusDocument;
-use VerificRca\Enum\StatusWebhook;
-use VerificRca\Enum\TipVerificare;
-use VerificRca\Exception\EroareValidare;
-use VerificRca\Internal\Decodor;
-use VerificRca\Internal\FormaInvalida;
-use VerificRca\Model\Vehicul;
-use VerificRca\Model\VerificareFinala;
-use VerificRca\Model\VerificareInCurs;
-use VerificRca\Model\WebhookDocumentExpira;
-use VerificRca\Model\WebhookRezultat;
-use VerificRca\Model\WebhookTest;
 
 final class ModeleTest extends TestCase
 {
@@ -112,6 +112,28 @@ final class ModeleTest extends TestCase
         self::assertNull($v->itpExpiraLa);
         self::assertTrue($v->activ);
         self::assertFalse($v->arrMonitorizat);
+        self::assertNull($v->serieTalon);
+        self::assertFalse($v->serieTalonRespinsa);
+    }
+
+    public function testVehiculCuSerieTalonRespinsa(): void
+    {
+        $v = Vehicul::fromArray([
+            'id' => '6f2c1b9e-0000-4000-8000-000000000001',
+            'numarInmatriculare' => 'B123ABC',
+            'serieSasiu' => 'WVWZZZ1JZXW000001',
+            'serieTalon' => 'I00639603F',
+            'serieTalonRespinsa' => true,
+            'rcaExpiraLa' => null,
+            'itpExpiraLa' => null,
+            'rovinietaExpiraLa' => null,
+            'arrExpiraLa' => null,
+            'arrMonitorizat' => false,
+            'activ' => true,
+            'createdAt' => '2026-09-01T08:00:00.000Z',
+        ]);
+        self::assertSame('I00639603F', $v->serieTalon);
+        self::assertTrue($v->serieTalonRespinsa);
     }
 
     public function testVerificareInCursSeSerializeazaSiSeReface(): void

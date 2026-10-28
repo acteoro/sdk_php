@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Enum;
+namespace Acteo\Enum;
 
 /**
  * Starea documentului:

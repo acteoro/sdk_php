@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Tests\Ajutor;
+namespace Acteo\Tests\Ajutor;
 
 use GuzzleHttp\Psr7\Request;
 use Psr\Http\Client\NetworkExceptionInterface;

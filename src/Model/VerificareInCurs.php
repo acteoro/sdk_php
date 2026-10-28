@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Model;
+namespace Acteo\Model;
 
-use VerificRca\Enum\TipVerificare;
-use VerificRca\Exception\EroareValidare;
-use VerificRca\Internal\Decodor;
-use VerificRca\Internal\FormaInvalida;
+use Acteo\Enum\TipVerificare;
+use Acteo\Exception\EroareValidare;
+use Acteo\Internal\Decodor;
+use Acteo\Internal\FormaInvalida;
 
 /**
  * Verificare pusa in coada: sursa oficiala e interogata acum. Paseaz-o la

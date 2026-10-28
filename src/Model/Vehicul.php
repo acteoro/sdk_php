@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Model;
+namespace Acteo\Model;
 
-use VerificRca\Internal\Decodor;
+use Acteo\Internal\Decodor;
 
 /** Un vehicul monitorizat din cont, cu datele de expirare ale documentelor. */
 final class Vehicul
@@ -15,11 +15,13 @@ final class Vehicul
      * @param string|null $serieSasiu null daca vehiculul a fost adaugat doar cu numarul
      * @param \DateTimeImmutable|null $rcaExpiraLa null daca nu e cunoscuta inca
      * @param \DateTimeImmutable|null $itpExpiraLa null daca nu e cunoscuta inca (ITP-ul cere VIN)
-     * @param \DateTimeImmutable|null $rovinietaExpiraLa null daca nu e cunoscuta inca (rovinieta cere numar si VIN)
+     * @param \DateTimeImmutable|null $rovinietaExpiraLa null daca nu e cunoscuta inca (rovinieta cere numar, VIN si numarul talonului)
      * @param \DateTimeImmutable|null $arrExpiraLa completata doar cand `arrMonitorizat` e true
      * @param bool $arrMonitorizat vehiculul e monitorizat si pentru copia conforma ARR
      * @param bool $activ vehiculul e verificat automat si primeste notificari de expirare
      * @param \DateTimeImmutable $createdAt cand a fost adaugat vehiculul in cont
+     * @param string|null $serieTalon numarul certificatului de inmatriculare (talon); fara el rovinieta nu se verifica
+     * @param bool $serieTalonRespinsa sursa a respins numarul talonului; rovinieta nu se mai verifica pana il corectezi
      */
     public function __construct(
         public readonly string $id,
@@ -32,6 +34,8 @@ final class Vehicul
         public readonly bool $arrMonitorizat,
         public readonly bool $activ,
         public readonly \DateTimeImmutable $createdAt,
+        public readonly ?string $serieTalon = null,
+        public readonly bool $serieTalonRespinsa = false,
     ) {}
 
     /**
@@ -52,6 +56,8 @@ final class Vehicul
             arrMonitorizat: Decodor::bool($d, 'arrMonitorizat', $prefix),
             activ: Decodor::bool($d, 'activ', $prefix),
             createdAt: Decodor::data($d, 'createdAt', $prefix),
+            serieTalon: Decodor::sirOptional($d, 'serieTalon', $prefix),
+            serieTalonRespinsa: array_key_exists('serieTalonRespinsa', $d) && Decodor::bool($d, 'serieTalonRespinsa', $prefix),
         );
     }
 }

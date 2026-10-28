@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Exception;
+namespace Acteo\Exception;
 
 /**
  * 429: limita a fost atinsa. `cod` spune care:
@@ -10,7 +10,7 @@ namespace VerificRca\Exception;
  * - `LIMITA_FLOTA_ATINSA`: plafonul zilnic de adaugari/stergeri de vehicule;
  * - `PREA_MULTE_CERERI`: polling prea des (SDK-ul reincearca singur).
  */
-final class EroareLimita extends VerificRcaException
+final class EroareLimita extends ActeoException
 {
     /**
      * @param int|null $retryAfterMs cat sa astepti inainte de o cerere noua, din headerul Retry-After

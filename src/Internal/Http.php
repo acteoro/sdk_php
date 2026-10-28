@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Internal;
+namespace Acteo\Internal;
 
+use Acteo\Exception\ActeoException;
+use Acteo\Exception\EroareLimita;
+use Acteo\Exception\EroareRaspunsInvalid;
+use Acteo\Exception\EroareRetea;
+use Acteo\Exception\EroareServer;
+use Acteo\Exception\EroareTimeoutVerificare;
+use Acteo\Exception\EroareValidare;
 use Psr\Http\Client\ClientExceptionInterface;
-use VerificRca\Exception\EroareLimita;
-use VerificRca\Exception\EroareRaspunsInvalid;
-use VerificRca\Exception\EroareRetea;
-use VerificRca\Exception\EroareServer;
-use VerificRca\Exception\EroareTimeoutVerificare;
-use VerificRca\Exception\EroareValidare;
-use VerificRca\Exception\VerificRcaException;
 
 /** @internal Trimite cereri catre API, cu maparea erorilor si retry. */
 final class Http
@@ -56,7 +56,7 @@ final class Http
      * Regula de baza: nu repetam o cerere neidempotenta care ar fi putut ajunge la
      * server, pentru ca o verificare se taxeaza.
      */
-    public static function sePoateReincerca(bool $idempotenta, VerificRcaException $e, SetariRetry $retry): bool
+    public static function sePoateReincerca(bool $idempotenta, ActeoException $e, SetariRetry $retry): bool
     {
         if ($e instanceof EroareRetea) {
             return $idempotenta || $e->neajunsa;
@@ -76,7 +76,7 @@ final class Http
     }
 
     /** Backoff exponential cu jitter, plafonat, dar niciodata sub `Retry-After`. */
-    public static function pauza(SetariRetry $retry, int $incercare, VerificRcaException $e): int
+    public static function pauza(SetariRetry $retry, int $incercare, ActeoException $e): int
     {
         $baza = min($retry->intarziereInitialaMs * 2 ** min($incercare, 30), $retry->intarziereMaximaMs);
         $jitter = 0.8 + mt_rand() / mt_getrandmax() * 0.4;
@@ -189,7 +189,7 @@ final class Http
         }
 
         if (!$ok) {
-            throw Erori::dinRaspuns($status, $headere, $valoare, $this->s->ceas->acumMs());
+            throw Erori::dinRaspuns($status, $headere, $valoare, $this->s->ceas->acumMs(), $this->s->urlImplicit);
         }
 
         return new Raspuns($status, $headere, $valoare);

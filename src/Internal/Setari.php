@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Internal;
+namespace Acteo\Internal;
 
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
@@ -20,5 +20,6 @@ final class Setari
         public readonly StreamFactoryInterface $fluxuri,
         public readonly string $userAgent,
         public readonly Ceas $ceas,
+        public readonly ?string $urlImplicit = null,
     ) {}
 }

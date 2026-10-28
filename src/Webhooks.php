@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace VerificRca;
+namespace Acteo;
 
+use Acteo\Exception\EroareWebhook;
+use Acteo\Internal\FormaInvalida;
+use Acteo\Model\WebhookDocumentExpira;
+use Acteo\Model\WebhookRezultat;
+use Acteo\Model\WebhookTest;
 use Psr\Http\Message\ServerRequestInterface;
-use VerificRca\Exception\EroareWebhook;
-use VerificRca\Internal\FormaInvalida;
-use VerificRca\Model\WebhookDocumentExpira;
-use VerificRca\Model\WebhookRezultat;
-use VerificRca\Model\WebhookTest;
 
-/** Citirea webhook-urilor trimise de verificrca. Nu face cereri pe retea. */
+/** Citirea webhook-urilor trimise de API. Nu face cereri pe retea. */
 final class Webhooks
 {
     /** Headerul cu cheia de webhook a contului (`whsec_...`). */

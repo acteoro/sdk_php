@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace VerificRca;
+namespace Acteo;
 
-use VerificRca\Cerere\CerereVerificare;
-use VerificRca\Cerere\OptiuniAsteptare;
-use VerificRca\Cerere\ReferintaVerificare;
-use VerificRca\Enum\TipVerificare;
-use VerificRca\Exception\EroareTimeoutVerificare;
-use VerificRca\Exception\EroareVerificare;
-use VerificRca\Internal\Ceas;
-use VerificRca\Internal\Decodor;
-use VerificRca\Internal\Http;
-use VerificRca\Internal\Raspuns;
-use VerificRca\Model\Cota;
-use VerificRca\Model\Limite;
-use VerificRca\Model\VerificareFinala;
-use VerificRca\Model\VerificareInCurs;
+use Acteo\Cerere\CerereVerificare;
+use Acteo\Cerere\OptiuniAsteptare;
+use Acteo\Cerere\ReferintaVerificare;
+use Acteo\Enum\TipVerificare;
+use Acteo\Exception\EroareTimeoutVerificare;
+use Acteo\Exception\EroareVerificare;
+use Acteo\Internal\Ceas;
+use Acteo\Internal\Decodor;
+use Acteo\Internal\Http;
+use Acteo\Internal\Raspuns;
+use Acteo\Model\Cota;
+use Acteo\Model\Limite;
+use Acteo\Model\VerificareFinala;
+use Acteo\Model\VerificareInCurs;
 
 /**
  * Verificarile la cerere: RCA, ITP, rovinieta si ARR. Il accesezi prin
@@ -64,6 +64,9 @@ final class ClientVerificari
         $corp = ['tip' => $tinta->tip->value, 'query' => $tinta->query];
         if ($tinta->serieSasiu !== null) {
             $corp['serieSasiu'] = $tinta->serieSasiu;
+        }
+        if ($tinta->serieTalon !== null) {
+            $corp['serieTalon'] = $tinta->serieTalon;
         }
         if ($tinta->callbackUrl !== null) {
             $corp['callbackUrl'] = $tinta->callbackUrl;
@@ -138,7 +141,7 @@ final class ClientVerificari
      * @throws Exception\EroareLimita cota atinsa (cod COTA_ATINSA)
      * @throws EroareTimeoutVerificare rezultatul nu a venit in `timeoutMs`
      * @throws EroareVerificare sursa oficiala nu a putut fi interogata
-     * @throws Exception\VerificRcaException orice alta eroare de la API sau de retea
+     * @throws Exception\ActeoException orice alta eroare de la API sau de retea
      */
     public function verificaSiAsteapta(CerereVerificare $cerere, ?OptiuniAsteptare $optiuni = null): VerificareFinala
     {
@@ -177,11 +180,13 @@ final class ClientVerificari
             $status = $d['status'] ?? null;
             if ($status === 'error') {
                 Decodor::enum($d, 'tip', '', TipVerificare::class);
+                // Cu `cod`, sursa a refuzat datele trimise si o reincercare nu ajuta.
                 throw new EroareVerificare(
                     Decodor::sir($d, 'error', ''),
                     cod: 'VERIFICARE_ESUATA',
                     hint: Decodor::sirOptional($d, 'hint', ''),
                     raspuns: $d,
+                    codSursa: Decodor::sirOptional($d, 'cod', ''),
                 );
             }
             if ($status === VerificareInCurs::STATUS) {

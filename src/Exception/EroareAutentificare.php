@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Exception;
+namespace Acteo\Exception;
 
 /** 401: cheia API lipseste, e invalida sau a fost dezactivata. */
-final class EroareAutentificare extends VerificRcaException {}
+final class EroareAutentificare extends ActeoException {}

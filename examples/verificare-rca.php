@@ -3,24 +3,18 @@
 declare(strict_types=1);
 
 // Verificare RCA dupa numar de inmatriculare si VIN, cu asteptarea rezultatului.
-// Rulare: VERIFICRCA_API_KEY=vrca_... php examples/verificare-rca.php
+// Rulare: ACTEO_API_KEY=... php examples/verificare-rca.php
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use VerificRca\Cerere\CerereVerificare;
-use VerificRca\Enum\TipVerificare;
-use VerificRca\Exception\EroareLimita;
-use VerificRca\Exception\EroareValidare;
-use VerificRca\VerificRca;
+use Acteo\Acteo;
+use Acteo\Exception\EroareLimita;
+use Acteo\Exception\EroareValidare;
 
-$vrca = new VerificRca();
+$acteo = new Acteo();
 
 try {
-    $rca = $vrca->verificari->verificaSiAsteapta(new CerereVerificare(
-        tip: TipVerificare::Rca,
-        query: 'B123ABC',
-        serieSasiu: 'WVWZZZ1JZXW000001',
-    ));
+    $rca = $acteo->auto->rca->verifica(['numar' => 'B123ABC', 'vin' => 'WVWZZZ1JZXW000001']);
     echo 'RCA ', $rca->status->value, ', expira la ', $rca->expiresAt?->format('d.m.Y') ?? '-', PHP_EOL;
     echo 'Mai ai ', $rca->limite?->zi->ramase ?? '?', ' verificari azi.', PHP_EOL;
 } catch (EroareValidare $e) {

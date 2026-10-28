@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Exception;
+namespace Acteo\Exception;
 
 /** 403: operatia nu e permisa pe planul curent (LIMIT_ATINS, ARR_NECESITA_PLAN). */
-final class EroareInterzis extends VerificRcaException
+final class EroareInterzis extends ActeoException
 {
     /** @param int|null $limita numarul de masini permis de plan, la LIMIT_ATINS */
     public function __construct(
