@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Internal;
+namespace Acteo\Internal;
 
-use VerificRca\Enum\TipVerificare;
+use Acteo\Enum\TipVerificare;
 
 /** @internal Cererea validata: ce trimitem la API si dupa ce facem polling. */
 final class TintaVerificare

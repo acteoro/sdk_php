@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Model;
+namespace Acteo\Model;
 
-use VerificRca\Enum\StatusWebhook;
-use VerificRca\Enum\TipVerificare;
-use VerificRca\Internal\Decodor;
+use Acteo\Enum\StatusWebhook;
+use Acteo\Enum\TipVerificare;
+use Acteo\Internal\Decodor;
 
 /** Payloadul POST trimis la `callbackUrl` cand o verificare se termina. */
 final class WebhookRezultat

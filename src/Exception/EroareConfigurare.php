@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Exception;
+namespace Acteo\Exception;
 
 /** Optiunile clientului sunt invalide (cheie API lipsa, URL gresit etc.). */
-final class EroareConfigurare extends VerificRcaException {}
+final class EroareConfigurare extends ActeoException {}

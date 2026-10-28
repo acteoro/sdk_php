@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Model;
+namespace Acteo\Model;
 
 /** Cat mai ai din cota planului, din headerele `X-RateLimit-*`. */
 final class Limite

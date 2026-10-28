@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Tests\Ajutor;
+namespace Acteo\Tests\Ajutor;
 
-use VerificRca\Internal\Ceas;
+use Acteo\Internal\Ceas;
 
 /** Ceas care nu doarme: inregistreaza pauzele si avanseaza timpul. */
 final class CeasFals implements Ceas

@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Model;
+namespace Acteo\Model;
 
-use VerificRca\Enum\StatusDocument;
-use VerificRca\Enum\TipVerificare;
-use VerificRca\Internal\Decodor;
+use Acteo\Enum\StatusDocument;
+use Acteo\Enum\TipVerificare;
+use Acteo\Internal\Decodor;
 
 /** Rezultatul final al unei verificari. */
 final class VerificareFinala

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Internal;
+namespace Acteo\Internal;
 
 /**
  * @internal Citire tipata din JSON-ul decodat. Campurile in plus sunt ignorate,

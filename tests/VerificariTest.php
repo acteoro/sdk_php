@@ -2,27 +2,27 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Tests;
+namespace Acteo\Tests;
 
+use Acteo\Cerere\CerereVerificare;
+use Acteo\Cerere\OptiuniAsteptare;
+use Acteo\Cerere\ReferintaVerificare;
+use Acteo\Enum\StatusDocument;
+use Acteo\Enum\TipVerificare;
+use Acteo\Exception\ActeoException;
+use Acteo\Exception\EroareAutentificare;
+use Acteo\Exception\EroareLimita;
+use Acteo\Exception\EroareRaspunsInvalid;
+use Acteo\Exception\EroareServer;
+use Acteo\Exception\EroareTimeoutVerificare;
+use Acteo\Exception\EroareValidare;
+use Acteo\Exception\EroareVerificare;
+use Acteo\Model\VerificareFinala;
+use Acteo\Model\VerificareInCurs;
+use Acteo\Tests\Ajutor\Ajutor;
+use Acteo\Tests\Ajutor\CeasFals;
+use Acteo\Tests\Ajutor\ClientFals;
 use PHPUnit\Framework\TestCase;
-use VerificRca\Cerere\CerereVerificare;
-use VerificRca\Cerere\OptiuniAsteptare;
-use VerificRca\Cerere\ReferintaVerificare;
-use VerificRca\Enum\StatusDocument;
-use VerificRca\Enum\TipVerificare;
-use VerificRca\Exception\EroareAutentificare;
-use VerificRca\Exception\EroareLimita;
-use VerificRca\Exception\EroareRaspunsInvalid;
-use VerificRca\Exception\EroareServer;
-use VerificRca\Exception\EroareTimeoutVerificare;
-use VerificRca\Exception\EroareValidare;
-use VerificRca\Exception\EroareVerificare;
-use VerificRca\Exception\VerificRcaException;
-use VerificRca\Model\VerificareFinala;
-use VerificRca\Model\VerificareInCurs;
-use VerificRca\Tests\Ajutor\Ajutor;
-use VerificRca\Tests\Ajutor\CeasFals;
-use VerificRca\Tests\Ajutor\ClientFals;
 
 final class VerificariTest extends TestCase
 {
@@ -152,7 +152,7 @@ final class VerificariTest extends TestCase
             Ajutor::client($client)->verificari->porneste(new CerereVerificare('rca', 'B123ABC'));
             self::fail('trebuia sa arunce');
         } catch (EroareAutentificare $e) {
-            self::assertInstanceOf(VerificRcaException::class, $e);
+            self::assertInstanceOf(ActeoException::class, $e);
             self::assertSame(401, $e->status);
             self::assertSame('Autentificare esuata.', $e->getMessage());
             self::assertSame('Transmite API key-ul', $e->hint);

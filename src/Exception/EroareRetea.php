@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Exception;
+namespace Acteo\Exception;
 
 /** Cererea nu a primit raspuns: retea cazuta, DNS, conexiune refuzata sau timeout. */
-final class EroareRetea extends VerificRcaException
+final class EroareRetea extends ActeoException
 {
     /**
      * @param bool $timeout adevarat cand cererea a depasit timpul de raspuns

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Enum;
+namespace Acteo\Enum;
 
 /** Starea din webhook-ul de rezultat: starea documentului sau `Error` cand sursa oficiala nu a raspuns. */
 enum StatusWebhook: string

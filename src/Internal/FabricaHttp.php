@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Internal;
+namespace Acteo\Internal;
 
+use Acteo\Exception\EroareConfigurare;
 use Http\Discovery\Psr17FactoryDiscovery;
 use Http\Discovery\Psr18ClientDiscovery;
 use Psr\Http\Client\ClientInterface;
@@ -11,7 +12,6 @@ use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Symfony\Component\HttpClient\HttpClient;
 use Symfony\Component\HttpClient\Psr18Client;
-use VerificRca\Exception\EroareConfigurare;
 
 /**
  * @internal Alege clientul HTTP. PSR-18 nu are timeout per cerere, asa ca atunci

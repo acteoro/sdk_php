@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Internal;
+namespace Acteo\Internal;
 
-use VerificRca\Exception\EroareConfigurare;
+use Acteo\Exception\EroareConfigurare;
 
 /**
  * @internal Politica de reincercare pentru erorile trecatoare. Pauzele cresc

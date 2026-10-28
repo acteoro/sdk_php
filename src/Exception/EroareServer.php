@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Exception;
+namespace Acteo\Exception;
 
-/** 5xx: eroare pe serverul verificrca. Cererile sigure se reincearca automat. */
-final class EroareServer extends VerificRcaException {}
+/** 5xx: eroare pe serverul API-ului. Cererile sigure se reincearca automat. */
+final class EroareServer extends ActeoException {}

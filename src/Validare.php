@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace VerificRca;
+namespace Acteo;
 
-use VerificRca\Cerere\CerereVerificare;
-use VerificRca\Cerere\VehiculNou;
-use VerificRca\Enum\TipVerificare;
-use VerificRca\Exception\EroareValidare;
-use VerificRca\Internal\TintaVerificare;
+use Acteo\Cerere\CerereVerificare;
+use Acteo\Cerere\VehiculNou;
+use Acteo\Enum\TipVerificare;
+use Acteo\Exception\EroareValidare;
+use Acteo\Internal\TintaVerificare;
 
 /**
  * Validarea locala a numerelor de inmatriculare si a VIN-urilor, cu aceleasi

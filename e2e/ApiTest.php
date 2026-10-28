@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\E2e;
+namespace Acteo\E2e;
 
+use Acteo\Cerere\CerereVerificare;
+use Acteo\Cerere\ReferintaVerificare;
+use Acteo\Cerere\VehiculNou;
+use Acteo\Enum\TipVerificare;
+use Acteo\Exception\EroareAutentificare;
+use Acteo\Exception\EroareConflict;
+use Acteo\Exception\EroareNegasit;
+use Acteo\Model\VerificareInCurs;
+use Acteo\VerificRca;
 use PHPUnit\Framework\TestCase;
-use VerificRca\Cerere\CerereVerificare;
-use VerificRca\Cerere\ReferintaVerificare;
-use VerificRca\Cerere\VehiculNou;
-use VerificRca\Enum\TipVerificare;
-use VerificRca\Exception\EroareAutentificare;
-use VerificRca\Exception\EroareConflict;
-use VerificRca\Exception\EroareNegasit;
-use VerificRca\Model\VerificareInCurs;
-use VerificRca\VerificRca;
 
 // Testele care costa (cota, verificari pe surse) ruleaza doar cu flag explicit.
 final class ApiTest extends TestCase

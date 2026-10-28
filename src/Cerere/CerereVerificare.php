@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Cerere;
+namespace Acteo\Cerere;
 
-use VerificRca\Enum\TipVerificare;
+use Acteo\Enum\TipVerificare;
 
 /** Datele pentru pornirea unei verificari. */
 final class CerereVerificare

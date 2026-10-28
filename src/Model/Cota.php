@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Model;
+namespace Acteo\Model;
 
 /** Cota pe o perioada (zi sau luna). */
 final class Cota

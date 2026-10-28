@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Tests;
+namespace Acteo\Tests;
 
+use Acteo\Enum\StatusDocument;
+use Acteo\Enum\StatusWebhook;
+use Acteo\Enum\TipVerificare;
+use Acteo\Exception\EroareValidare;
+use Acteo\Internal\Decodor;
+use Acteo\Internal\FormaInvalida;
+use Acteo\Model\Vehicul;
+use Acteo\Model\VerificareFinala;
+use Acteo\Model\VerificareInCurs;
+use Acteo\Model\WebhookDocumentExpira;
+use Acteo\Model\WebhookRezultat;
+use Acteo\Model\WebhookTest;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use VerificRca\Enum\StatusDocument;
-use VerificRca\Enum\StatusWebhook;
-use VerificRca\Enum\TipVerificare;
-use VerificRca\Exception\EroareValidare;
-use VerificRca\Internal\Decodor;
-use VerificRca\Internal\FormaInvalida;
-use VerificRca\Model\Vehicul;
-use VerificRca\Model\VerificareFinala;
-use VerificRca\Model\VerificareInCurs;
-use VerificRca\Model\WebhookDocumentExpira;
-use VerificRca\Model\WebhookRezultat;
-use VerificRca\Model\WebhookTest;
 
 final class ModeleTest extends TestCase
 {

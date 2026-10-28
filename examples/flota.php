@@ -7,7 +7,7 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use VerificRca\VerificRca;
+use Acteo\VerificRca;
 
 $vrca = new VerificRca();
 $azi = new DateTimeImmutable('today');

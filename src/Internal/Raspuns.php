@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Internal;
+namespace Acteo\Internal;
 
 /** @internal Un raspuns 2xx, cu corpul JSON deja decodat. */
 final class Raspuns

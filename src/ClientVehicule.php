@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace VerificRca;
+namespace Acteo;
 
-use VerificRca\Cerere\VehiculNou;
-use VerificRca\Exception\EroareValidare;
-use VerificRca\Internal\Decodor;
-use VerificRca\Internal\FormaInvalida;
-use VerificRca\Internal\Http;
-use VerificRca\Model\Vehicul;
+use Acteo\Cerere\VehiculNou;
+use Acteo\Exception\EroareValidare;
+use Acteo\Internal\Decodor;
+use Acteo\Internal\FormaInvalida;
+use Acteo\Internal\Http;
+use Acteo\Model\Vehicul;
 
 /**
- * Vehiculele monitorizate din cont. Il accesezi prin `$vrca->vehicule`, nu il
+ * Vehiculele monitorizate din cont. Il accesezi prin `$acteo->auto->flota`, nu il
  * construiesti direct.
  *
  * Operatiile sunt gratuite (nu consuma din cota de verificari), dar cer un plan

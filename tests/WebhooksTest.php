@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Tests;
+namespace Acteo\Tests;
 
+use Acteo\Enum\StatusWebhook;
+use Acteo\Exception\EroareWebhook;
+use Acteo\Model\WebhookDocumentExpira;
+use Acteo\Model\WebhookTest;
+use Acteo\Tests\Ajutor\Ajutor;
+use Acteo\Webhooks;
 use GuzzleHttp\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
-use VerificRca\Enum\StatusWebhook;
-use VerificRca\Exception\EroareWebhook;
-use VerificRca\Model\WebhookDocumentExpira;
-use VerificRca\Model\WebhookTest;
-use VerificRca\Tests\Ajutor\Ajutor;
-use VerificRca\Webhooks;
 
 final class WebhooksTest extends TestCase
 {

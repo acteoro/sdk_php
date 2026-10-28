@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Cerere;
+namespace Acteo\Cerere;
 
 /** Datele unui vehicul adaugat in flota. Trimite cel putin numarul sau seria de sasiu. */
 final class VehiculNou

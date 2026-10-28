@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Tests;
+namespace Acteo\Tests;
 
+use Acteo\Cerere\VehiculNou;
+use Acteo\Exception\EroareConflict;
+use Acteo\Exception\EroareInterzis;
+use Acteo\Exception\EroareNegasit;
+use Acteo\Exception\EroareRaspunsInvalid;
+use Acteo\Exception\EroareServer;
+use Acteo\Exception\EroareValidare;
+use Acteo\Tests\Ajutor\Ajutor;
+use Acteo\Tests\Ajutor\ClientFals;
 use PHPUnit\Framework\TestCase;
-use VerificRca\Cerere\VehiculNou;
-use VerificRca\Exception\EroareConflict;
-use VerificRca\Exception\EroareInterzis;
-use VerificRca\Exception\EroareNegasit;
-use VerificRca\Exception\EroareRaspunsInvalid;
-use VerificRca\Exception\EroareServer;
-use VerificRca\Exception\EroareValidare;
-use VerificRca\Tests\Ajutor\Ajutor;
-use VerificRca\Tests\Ajutor\ClientFals;
 
 final class VehiculeTest extends TestCase
 {

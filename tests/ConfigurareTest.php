@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Tests;
+namespace Acteo\Tests;
 
+use Acteo\Cerere\ReferintaVerificare;
+use Acteo\Enum\TipVerificare;
+use Acteo\Exception\EroareConfigurare;
+use Acteo\Tests\Ajutor\Ajutor;
+use Acteo\Tests\Ajutor\ClientFals;
+use Acteo\VerificRca;
 use GuzzleHttp\Psr7\HttpFactory;
 use PHPUnit\Framework\TestCase;
-use VerificRca\Cerere\ReferintaVerificare;
-use VerificRca\Enum\TipVerificare;
-use VerificRca\Exception\EroareConfigurare;
-use VerificRca\Tests\Ajutor\Ajutor;
-use VerificRca\Tests\Ajutor\ClientFals;
-use VerificRca\VerificRca;
 
 final class ConfigurareTest extends TestCase
 {

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Cerere;
+namespace Acteo\Cerere;
 
 /** Optiunile pentru `asteapta()` si `verificaSiAsteapta()`. */
 final class OptiuniAsteptare

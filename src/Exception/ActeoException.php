@@ -2,13 +2,14 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Exception;
+namespace Acteo\Exception;
 
 /**
- * Baza tuturor erorilor aruncate de SDK. `catch (VerificRcaException $e)` prinde
- * orice eroare de la verificrca; subclasa spune exact care e.
+ * Baza tuturor erorilor aruncate de SDK. `catch (ActeoException $e)` prinde
+ * orice eroare de la API; subclasa spune exact care e. Vechiul nume
+ * `VerificRca\Exception\VerificRcaException` e un alias al acestei clase.
  */
-class VerificRcaException extends \RuntimeException
+class ActeoException extends \RuntimeException
 {
     /**
      * @param string $message mesajul, in romana, exact cum vine de la API cand exista

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Model;
+namespace Acteo\Model;
 
-use VerificRca\Internal\Decodor;
+use Acteo\Internal\Decodor;
 
 /** Un vehicul monitorizat din cont, cu datele de expirare ale documentelor. */
 final class Vehicul

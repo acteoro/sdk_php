@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Exception;
+namespace Acteo\Exception;
 
 /**
  * Verificarea s-a terminat cu statusul error; `cod` e mereu `VERIFICARE_ESUATA`.
@@ -11,7 +11,7 @@ namespace VerificRca\Exception;
  * Cu `codSursa` (`serie_talon_invalida`, `vin_invalid`, `numar_invalid`), sursa a
  * refuzat datele trimise: corecteaza-le, altfel o cerere noua da acelasi rezultat.
  */
-final class EroareVerificare extends VerificRcaException
+final class EroareVerificare extends ActeoException
 {
     /**
      * @param string|null $codSursa motivul trimis de API cand sursa a refuzat datele

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Exception;
+namespace Acteo\Exception;
 
 /**
  * Datele trimise sunt invalide. Apare fie local, inainte de orice cerere (nu se
  * consuma nimic din cota), fie ca raspuns 400 de la API.
  */
-final class EroareValidare extends VerificRcaException
+final class EroareValidare extends ActeoException
 {
     /**
      * @param list<string>|null $acceptate valorile acceptate, cand API-ul le trimite (ex: tipurile de verificare)

@@ -7,9 +7,9 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use VerificRca\Exception\EroareWebhook;
-use VerificRca\Model\WebhookDocumentExpira;
-use VerificRca\Webhooks;
+use Acteo\Exception\EroareWebhook;
+use Acteo\Model\WebhookDocumentExpira;
+use Acteo\Webhooks;
 
 $corp = (string) file_get_contents('php://input');
 $uri = $_SERVER['REQUEST_URI'] ?? '/';

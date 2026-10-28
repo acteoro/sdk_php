@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Tests;
+namespace Acteo\Tests;
 
+use Acteo\Enum\StatusWebhook;
+use Acteo\Enum\TipVerificare;
+use Acteo\Exception\ActeoException;
+use Acteo\Exception\EroareConfigurare;
+use Acteo\Exception\EroareLimita;
+use Acteo\Exception\EroareRetea;
+use Acteo\Exception\EroareValidare;
+use Acteo\Exception\EroareWebhook;
 use PHPUnit\Framework\TestCase;
-use VerificRca\Enum\StatusWebhook;
-use VerificRca\Enum\TipVerificare;
-use VerificRca\Exception\EroareConfigurare;
-use VerificRca\Exception\EroareLimita;
-use VerificRca\Exception\EroareRetea;
-use VerificRca\Exception\EroareValidare;
-use VerificRca\Exception\EroareWebhook;
-use VerificRca\Exception\VerificRcaException;
 
 final class ExceptiiTest extends TestCase
 {
@@ -21,7 +21,7 @@ final class ExceptiiTest extends TestCase
         $cauza = new \RuntimeException('jos');
         $e = new EroareConfigurare('mesaj', status: 400, cod: 'X', hint: 'fa asa', raspuns: ['a' => 1], previous: $cauza);
 
-        self::assertInstanceOf(VerificRcaException::class, $e);
+        self::assertInstanceOf(ActeoException::class, $e);
         self::assertInstanceOf(\RuntimeException::class, $e);
         self::assertSame('mesaj', $e->getMessage());
         self::assertSame(400, $e->status);

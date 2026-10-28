@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Model;
+namespace Acteo\Model;
 
-use VerificRca\Enum\TipVerificare;
-use VerificRca\Internal\Decodor;
+use Acteo\Enum\TipVerificare;
+use Acteo\Internal\Decodor;
 
 /** Evenimentul `document.expira`: un document a intrat intr-un prag de expirare. */
 final class WebhookDocumentExpira

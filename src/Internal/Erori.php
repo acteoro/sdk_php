@@ -2,27 +2,29 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Internal;
+namespace Acteo\Internal;
 
-use VerificRca\Exception\EroareAutentificare;
-use VerificRca\Exception\EroareConflict;
-use VerificRca\Exception\EroareHttp;
-use VerificRca\Exception\EroareInterzis;
-use VerificRca\Exception\EroareLimita;
-use VerificRca\Exception\EroareNegasit;
-use VerificRca\Exception\EroarePlanInactiv;
-use VerificRca\Exception\EroareServer;
-use VerificRca\Exception\EroareValidare;
-use VerificRca\Exception\VerificRcaException;
-use VerificRca\VerificRca;
+use Acteo\Exception\ActeoException;
+use Acteo\Exception\EroareAutentificare;
+use Acteo\Exception\EroareConflict;
+use Acteo\Exception\EroareHttp;
+use Acteo\Exception\EroareInterzis;
+use Acteo\Exception\EroareLimita;
+use Acteo\Exception\EroareNegasit;
+use Acteo\Exception\EroarePlanInactiv;
+use Acteo\Exception\EroareServer;
+use Acteo\Exception\EroareValidare;
 
 /** @internal Transforma un raspuns non-2xx in eroarea tipata potrivita. */
 final class Erori
 {
     private function __construct() {}
 
-    /** @param array<string, string> $headere chei lowercase */
-    public static function dinRaspuns(int $status, array $headere, mixed $corp, int $acumMs): VerificRcaException
+    /**
+     * @param array<string, string> $headere chei lowercase
+     * @param string|null $urlImplicit adresa implicita a clientului, aratata in hint la redirect
+     */
+    public static function dinRaspuns(int $status, array $headere, mixed $corp, int $acumMs, ?string $urlImplicit = null): ActeoException
     {
         $c = is_array($corp) && is_string($corp['error'] ?? null) ? $corp : [];
         $sir = static fn(string $cheie): ?string => isset($c[$cheie]) && is_string($c[$cheie]) ? $c[$cheie] : null;
@@ -74,7 +76,7 @@ final class Erori
                 $locatie !== '' ? "API-ul a raspuns cu redirect catre {$locatie}." : "API-ul a raspuns cu redirect (HTTP {$status}).",
                 $status,
                 $cod,
-                'Foloseste adresa canonica in `baseUrl`: ' . VerificRca::URL_IMPLICIT,
+                'Foloseste adresa canonica in `baseUrl`' . ($urlImplicit !== null ? ': ' . $urlImplicit : '.'),
                 $corp,
             );
         }

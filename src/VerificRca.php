@@ -2,24 +2,22 @@
 
 declare(strict_types=1);
 
-namespace VerificRca;
+namespace Acteo;
 
+use Acteo\Exception\EroareConfigurare;
+use Acteo\Internal\Ceas;
+use Acteo\Internal\Configurare;
+use Acteo\Internal\Http;
+use Acteo\Internal\ProfilClient;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\StreamFactoryInterface;
-use VerificRca\Exception\EroareConfigurare;
-use VerificRca\Internal\Ceas;
-use VerificRca\Internal\CeasSistem;
-use VerificRca\Internal\FabricaHttp;
-use VerificRca\Internal\Http;
-use VerificRca\Internal\Setari;
-use VerificRca\Internal\SetariRetry;
 
 /**
- * Clientul API verificrca.ro: verificare RCA, ITP, rovinieta si ARR, plus
- * gestionarea vehiculelor monitorizate.
+ * Clientul legacy, pastrat pentru codul existent; pentru cod nou foloseste `Acteo`.
+ * Verificare RCA, ITP, rovinieta si ARR, plus gestionarea vehiculelor monitorizate.
  *
- * Toate metodele arunca subclase de `VerificRcaException`. Erorile trecatoare
+ * Toate metodele arunca subclase de `ActeoException`. Erorile trecatoare
  * (retea, 5xx, throttle la polling) sunt reincercate automat, fara sa repete
  * vreodata o verificare taxata.
  *
@@ -31,9 +29,9 @@ use VerificRca\Internal\SetariRetry;
 final class VerificRca
 {
     /** Versiunea acestui SDK, trimisa si in headerul `User-Agent`. */
-    public const VERSIUNE_SDK = '0.2.0';
+    public const VERSIUNE_SDK = Acteo::VERSIUNE_SDK;
 
-    /** Adresa implicita a API-ului. */
+    /** Adresa implicita a clientului legacy. */
     public const URL_IMPLICIT = 'https://www.verificrca.ro';
 
     /** Verificari la cerere RCA, ITP, rovinieta si ARR. */
@@ -72,61 +70,27 @@ final class VerificRca
         ?string $userAgent = null,
         ?Ceas $ceas = null,
     ) {
-        if ($timeoutMs <= 0) {
-            throw new EroareConfigurare('`timeoutMs` trebuie sa fie pozitiv.');
-        }
-        $userAgent = trim($userAgent ?? '');
-
-        $setari = new Setari(
-            apiKey: self::cheie($apiKey),
-            baseUrl: self::adresa($baseUrl),
-            retry: $retry === false ? null : SetariRetry::dinOptiuni($retry),
-            http: FabricaHttp::client($httpClient, $timeoutMs),
-            cereri: FabricaHttp::fabricaCereri($requestFactory),
-            fluxuri: FabricaHttp::fabricaFluxuri($streamFactory),
-            userAgent: 'verificrca-sdk-php/' . self::VERSIUNE_SDK . ($userAgent !== '' ? ' ' . $userAgent : ''),
-            ceas: $ceas ?? new CeasSistem(),
+        $setari = Configurare::setari(
+            new ProfilClient(
+                urlImplicit: self::URL_IMPLICIT,
+                variabileCheie: ['VERIFICRCA_API_KEY'],
+                agent: 'verificrca-sdk-php',
+                undeCheie: 'https://www.verificrca.ro/dashboard/api',
+            ),
+            self::VERSIUNE_SDK,
+            $apiKey,
+            $baseUrl,
+            $timeoutMs,
+            $retry,
+            $httpClient,
+            $requestFactory,
+            $streamFactory,
+            $userAgent,
+            $ceas,
         );
         $http = new Http($setari);
 
         $this->verificari = new ClientVerificari($http, $setari->ceas);
         $this->vehicule = new ClientVehicule($http);
-    }
-
-    private static function cheie(?string $apiKey): string
-    {
-        $cheie = trim($apiKey ?? self::citesteMediu('VERIFICRCA_API_KEY') ?? '');
-        if ($cheie === '') {
-            throw new EroareConfigurare(
-                'Lipseste cheia API. Trimite `apiKey` sau seteaza variabila de mediu VERIFICRCA_API_KEY.',
-                hint: 'Cheia se genereaza din https://www.verificrca.ro/dashboard/api',
-            );
-        }
-        if (strlen($cheie) < 16 || strlen($cheie) > 128) {
-            throw new EroareConfigurare('Cheia API are un format invalid (intre 16 si 128 de caractere).');
-        }
-
-        return $cheie;
-    }
-
-    private static function adresa(string $baseUrl): string
-    {
-        $schema = strtolower((string) parse_url($baseUrl, PHP_URL_SCHEME));
-        if (filter_var($baseUrl, FILTER_VALIDATE_URL) === false || ($schema !== 'http' && $schema !== 'https')) {
-            throw new EroareConfigurare("`baseUrl` invalid: {$baseUrl}");
-        }
-
-        return rtrim($baseUrl, '/');
-    }
-
-    private static function citesteMediu(string $nume): ?string
-    {
-        $valoare = getenv($nume);
-        if (is_string($valoare) && $valoare !== '') {
-            return $valoare;
-        }
-        $valoare = $_ENV[$nume] ?? $_SERVER[$nume] ?? null;
-
-        return is_string($valoare) && $valoare !== '' ? $valoare : null;
     }
 }

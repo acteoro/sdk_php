@@ -2,33 +2,33 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Tests;
+namespace Acteo\Tests;
 
+use Acteo\Exception\ActeoException;
+use Acteo\Exception\EroareAutentificare;
+use Acteo\Exception\EroareConflict;
+use Acteo\Exception\EroareHttp;
+use Acteo\Exception\EroareInterzis;
+use Acteo\Exception\EroareLimita;
+use Acteo\Exception\EroareNegasit;
+use Acteo\Exception\EroarePlanInactiv;
+use Acteo\Exception\EroareRaspunsInvalid;
+use Acteo\Exception\EroareRetea;
+use Acteo\Exception\EroareServer;
+use Acteo\Exception\EroareValidare;
+use Acteo\Internal\Decodor;
+use Acteo\Internal\Erori;
+use Acteo\Internal\FabricaHttp;
+use Acteo\Internal\Http;
+use Acteo\Internal\Raspuns;
+use Acteo\Internal\SetariRetry;
+use Acteo\Tests\Ajutor\Ajutor;
+use Acteo\Tests\Ajutor\CeasFals;
+use Acteo\Tests\Ajutor\ClientFals;
+use Acteo\Tests\Ajutor\ExceptieRetea;
 use GuzzleHttp\Exception\ConnectException;
 use GuzzleHttp\Psr7\Request;
 use PHPUnit\Framework\TestCase;
-use VerificRca\Exception\EroareAutentificare;
-use VerificRca\Exception\EroareConflict;
-use VerificRca\Exception\EroareHttp;
-use VerificRca\Exception\EroareInterzis;
-use VerificRca\Exception\EroareLimita;
-use VerificRca\Exception\EroareNegasit;
-use VerificRca\Exception\EroarePlanInactiv;
-use VerificRca\Exception\EroareRaspunsInvalid;
-use VerificRca\Exception\EroareRetea;
-use VerificRca\Exception\EroareServer;
-use VerificRca\Exception\EroareValidare;
-use VerificRca\Exception\VerificRcaException;
-use VerificRca\Internal\Decodor;
-use VerificRca\Internal\Erori;
-use VerificRca\Internal\FabricaHttp;
-use VerificRca\Internal\Http;
-use VerificRca\Internal\Raspuns;
-use VerificRca\Internal\SetariRetry;
-use VerificRca\Tests\Ajutor\Ajutor;
-use VerificRca\Tests\Ajutor\CeasFals;
-use VerificRca\Tests\Ajutor\ClientFals;
-use VerificRca\Tests\Ajutor\ExceptieRetea;
 
 final class HttpTest extends TestCase
 {
@@ -272,7 +272,7 @@ final class HttpTest extends TestCase
         self::assertFalse(Http::sePoateReincerca(true, new EroareLimita('x', 429, 'COTA_ATINSA'), $r));
         self::assertTrue(Http::sePoateReincerca(true, new EroareLimita('x', 429, 'PREA_MULTE_CERERI', retryAfterMs: 2000), $r));
         self::assertFalse(Http::sePoateReincerca(false, new EroareLimita('x', 429, 'PREA_MULTE_CERERI'), $r));
-        self::assertFalse(Http::sePoateReincerca(true, new VerificRcaException('x'), $r));
+        self::assertFalse(Http::sePoateReincerca(true, new ActeoException('x'), $r));
     }
 
     public function testDecodeaza(): void
@@ -305,9 +305,9 @@ final class HttpTest extends TestCase
 
     public function testRedirectulDevineEroareHttpCuHint(): void
     {
-        $e = Erori::dinRaspuns(301, ['location' => 'https://www.verificrca.ro/api/public/v1/vehicule'], '', 0);
+        $e = Erori::dinRaspuns(301, ['location' => 'https://example.com/api/public/v1/vehicule'], '', 0, 'https://api.acteo.ro');
         self::assertInstanceOf(EroareHttp::class, $e);
-        self::assertStringContainsString('https://www.verificrca.ro', (string) $e->hint);
+        self::assertStringContainsString('https://api.acteo.ro', (string) $e->hint);
     }
 
     public function testClientulConstruitDeSdkNuUrmeazaRedirecturi(): void

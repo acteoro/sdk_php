@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace VerificRca\Tests;
+namespace Acteo\Tests;
 
+use Acteo\Cerere\CerereVerificare;
+use Acteo\Cerere\VehiculNou;
+use Acteo\Enum\TipVerificare;
+use Acteo\Exception\EroareValidare;
+use Acteo\Validare;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
-use VerificRca\Cerere\CerereVerificare;
-use VerificRca\Cerere\VehiculNou;
-use VerificRca\Enum\TipVerificare;
-use VerificRca\Exception\EroareValidare;
-use VerificRca\Validare;
 
 final class ValidareTest extends TestCase
 {

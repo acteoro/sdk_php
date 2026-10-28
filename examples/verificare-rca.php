@@ -7,11 +7,11 @@ declare(strict_types=1);
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use VerificRca\Cerere\CerereVerificare;
-use VerificRca\Enum\TipVerificare;
-use VerificRca\Exception\EroareLimita;
-use VerificRca\Exception\EroareValidare;
-use VerificRca\VerificRca;
+use Acteo\Cerere\CerereVerificare;
+use Acteo\Enum\TipVerificare;
+use Acteo\Exception\EroareLimita;
+use Acteo\Exception\EroareValidare;
+use Acteo\VerificRca;
 
 $vrca = new VerificRca();
 
