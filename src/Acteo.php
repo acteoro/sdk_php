@@ -31,7 +31,7 @@ use Psr\Http\Message\StreamFactoryInterface;
 final class Acteo
 {
     /** Versiunea acestui SDK, trimisa si in headerul `User-Agent`. */
-    public const VERSIUNE_SDK = '0.1.0';
+    public const VERSIUNE_SDK = '0.3.0';
 
     /** Adresa implicita a API-ului. */
     public const URL_IMPLICIT = 'https://api.acteo.ro';

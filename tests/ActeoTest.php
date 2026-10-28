@@ -49,7 +49,7 @@ final class ActeoTest extends TestCase
         $c = $client->cerere();
         self::assertSame('https://api.acteo.ro/api/public/v1/verificare', (string) $c->getUri());
         self::assertSame('acteo-sdk-php/' . Acteo::VERSIUNE_SDK, $c->getHeaderLine('User-Agent'));
-        self::assertSame('0.1.0', Acteo::VERSIUNE_SDK);
+        self::assertSame('0.3.0', Acteo::VERSIUNE_SDK);
     }
 
     public function testCitesteCheiaDinActeoApiKeyApoiDinVerificrcaApiKey(): void
