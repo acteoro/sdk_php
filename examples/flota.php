@@ -3,17 +3,17 @@
 declare(strict_types=1);
 
 // Raport de expirari pentru toata flota: RCA, ITP, rovinieta si ARR in urmatoarele 30 de zile.
-// Rulare: VERIFICRCA_API_KEY=vrca_... php examples/flota.php
+// Rulare: ACTEO_API_KEY=... php examples/flota.php
 
 require __DIR__ . '/../vendor/autoload.php';
 
-use Acteo\VerificRca;
+use Acteo\Acteo;
 
-$vrca = new VerificRca();
+$acteo = new Acteo();
 $azi = new DateTimeImmutable('today');
 $limita = $azi->modify('+30 days');
 
-foreach ($vrca->vehicule->lista() as $v) {
+foreach ($acteo->auto->flota->lista() as $v) {
     $documente = [
         'RCA' => $v->rcaExpiraLa,
         'ITP' => $v->itpExpiraLa,

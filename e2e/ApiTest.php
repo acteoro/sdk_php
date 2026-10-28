@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Acteo\E2e;
 
-use Acteo\Cerere\CerereVerificare;
-use Acteo\Cerere\ReferintaVerificare;
+use Acteo\Acteo;
 use Acteo\Cerere\VehiculNou;
 use Acteo\Enum\TipVerificare;
 use Acteo\Exception\EroareAutentificare;
 use Acteo\Exception\EroareConflict;
 use Acteo\Exception\EroareNegasit;
 use Acteo\Model\VerificareInCurs;
-use Acteo\VerificRca;
 use PHPUnit\Framework\TestCase;
 
 // Testele care costa (cota, verificari pe surse) ruleaza doar cu flag explicit.
@@ -21,7 +19,7 @@ final class ApiTest extends TestCase
     public function testOCheieInexistentaPrimeste401(): void
     {
         try {
-            self::client('vrca_e2e_cheie_inexistenta_0000')->vehicule->lista();
+            self::client('e2e_cheie_inexistenta_00000')->auto->flota->lista();
             self::fail('trebuia sa arunce EroareAutentificare');
         } catch (EroareAutentificare $e) {
             self::assertSame(401, $e->status);
@@ -30,8 +28,8 @@ final class ApiTest extends TestCase
 
     public function testListaVehiculelorEsteDecodata(): void
     {
-        self::cere('VERIFICRCA_API_KEY');
-        $vehicule = self::client()->vehicule->lista();
+        self::cere('ACTEO_API_KEY');
+        $vehicule = self::client()->auto->flota->lista();
         foreach ($vehicule as $v) {
             self::assertNotSame('', $v->id);
         }
@@ -40,13 +38,13 @@ final class ApiTest extends TestCase
 
     public function testAdaugaGasesteSiStergeUnVehicul(): void
     {
-        self::cere('VERIFICRCA_API_KEY', 'VERIFICRCA_E2E_NUMAR');
-        self::cereFlag('VERIFICRCA_E2E_FLOTA');
-        $numar = (string) self::env('VERIFICRCA_E2E_NUMAR');
-        $vrca = self::client();
+        self::cere('ACTEO_API_KEY', 'ACTEO_E2E_NUMAR');
+        self::cereFlag('ACTEO_E2E_FLOTA');
+        $numar = (string) self::env('ACTEO_E2E_NUMAR');
+        $acteo = self::client();
 
         try {
-            $adaugat = $vrca->vehicule->adauga(new VehiculNou($numar, self::env('VERIFICRCA_E2E_VIN')));
+            $adaugat = $acteo->auto->flota->adauga(new VehiculNou($numar, self::env('ACTEO_E2E_VIN')));
         } catch (EroareConflict $e) {
             // Vehiculul e deja in cont: nu il atingem, validam doar raspunsul 409.
             self::assertSame(409, $e->status);
@@ -57,19 +55,19 @@ final class ApiTest extends TestCase
         $id = $adaugat->id;
         try {
             self::assertSame(strtoupper((string) preg_replace('/[\s-]+/', '', $numar)), $adaugat->numarInmatriculare);
-            self::assertContains($id, array_map(static fn($v) => $v->id, $vrca->vehicule->lista()));
+            self::assertContains($id, array_map(static fn($v) => $v->id, $acteo->auto->flota->lista()));
 
-            $vrca->vehicule->sterge($id);
+            $acteo->auto->flota->sterge($id);
             $id = null;
-            self::assertNotContains($adaugat->id, array_map(static fn($v) => $v->id, $vrca->vehicule->lista()));
+            self::assertNotContains($adaugat->id, array_map(static fn($v) => $v->id, $acteo->auto->flota->lista()));
 
             $this->expectException(EroareNegasit::class);
-            $vrca->vehicule->sterge($adaugat->id);
+            $acteo->auto->flota->sterge($adaugat->id);
         } finally {
             // Curatenie si cand un test pica la jumatate.
             if ($id !== null) {
                 try {
-                    $vrca->vehicule->sterge($id);
+                    $acteo->auto->flota->sterge($id);
                 } catch (\Throwable) {
                 }
             }
@@ -78,36 +76,38 @@ final class ApiTest extends TestCase
 
     public function testRcaPornesteAsteaptaSiRecitesteGratuit(): void
     {
-        self::cere('VERIFICRCA_API_KEY', 'VERIFICRCA_E2E_NUMAR');
-        self::cereFlag('VERIFICRCA_E2E_VERIFICARI');
-        $vrca = self::client();
+        self::cere('ACTEO_API_KEY', 'ACTEO_E2E_NUMAR');
+        self::cereFlag('ACTEO_E2E_VERIFICARI');
+        $acteo = self::client();
+        $numar = (string) self::env('ACTEO_E2E_NUMAR');
+        $vin = self::env('ACTEO_E2E_VIN');
 
-        $pornit = $vrca->verificari->porneste(new CerereVerificare(TipVerificare::Rca, (string) self::env('VERIFICRCA_E2E_NUMAR'), self::env('VERIFICRCA_E2E_VIN')));
+        $pornit = $acteo->auto->rca->porneste($vin !== null ? ['numar' => $numar, 'vin' => $vin] : $numar);
         self::assertGreaterThan(0, $pornit->limite?->zi->limita ?? 0);
 
-        $final = $pornit instanceof VerificareInCurs ? $vrca->verificari->asteapta($pornit) : $pornit;
+        $final = $pornit instanceof VerificareInCurs ? $acteo->auto->rca->asteapta($pornit) : $pornit;
         self::assertLessThanOrEqual(new \DateTimeImmutable('+1 minute'), $final->checkedAt);
 
         // GET-ul nu consuma din cota si trebuie sa dea acelasi rezultat.
-        $recitit = $vrca->verificari->rezultat(new ReferintaVerificare(TipVerificare::Rca, $final->query));
+        $recitit = $acteo->auto->rca->rezultat($final->query);
         self::assertNotInstanceOf(VerificareInCurs::class, $recitit);
         self::assertSame($final->status, $recitit->status);
     }
 
-    public function testItpDupaVinCuVerificaSiAsteapta(): void
+    public function testItpDupaVinCuVerifica(): void
     {
-        self::cere('VERIFICRCA_API_KEY', 'VERIFICRCA_E2E_VIN');
-        self::cereFlag('VERIFICRCA_E2E_VERIFICARI');
+        self::cere('ACTEO_API_KEY', 'ACTEO_E2E_VIN');
+        self::cereFlag('ACTEO_E2E_VERIFICARI');
 
-        $itp = self::client()->verificari->verificaSiAsteapta(new CerereVerificare(TipVerificare::Itp, (string) self::env('VERIFICRCA_E2E_VIN')));
+        $itp = self::client()->auto->itp->verifica((string) self::env('ACTEO_E2E_VIN'));
         self::assertSame(TipVerificare::Itp, $itp->tip);
     }
 
-    private static function client(?string $cheie = null): VerificRca
+    private static function client(?string $cheie = null): Acteo
     {
-        return new VerificRca(
-            apiKey: $cheie ?? self::env('VERIFICRCA_API_KEY'),
-            baseUrl: self::env('VERIFICRCA_BASE_URL') ?? VerificRca::URL_IMPLICIT,
+        return new Acteo(
+            apiKey: $cheie ?? self::env('ACTEO_API_KEY'),
+            baseUrl: self::env('ACTEO_BASE_URL') ?? Acteo::URL_IMPLICIT,
             userAgent: 'e2e',
         );
     }
