@@ -77,7 +77,7 @@ final class Acteo
                 urlImplicit: self::URL_IMPLICIT,
                 variabileCheie: ['ACTEO_API_KEY', 'VERIFICRCA_API_KEY'],
                 agent: 'acteo-sdk-php',
-                undeCheie: 'https://www.verificrca.ro/dashboard/api',
+                undeCheie: 'https://app.acteo.ro/api/chei',
             ),
             self::VERSIUNE_SDK,
             $apiKey,

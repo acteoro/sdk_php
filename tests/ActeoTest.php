@@ -75,7 +75,7 @@ final class ActeoTest extends TestCase
             self::fail('trebuia sa arunce');
         } catch (EroareConfigurare $e) {
             self::assertStringContainsString('ACTEO_API_KEY', $e->getMessage());
-            self::assertStringContainsString('dashboard/api', (string) $e->hint);
+            self::assertStringContainsString('app.acteo.ro/api/chei', (string) $e->hint);
         }
     }
 
