@@ -4,5 +4,5 @@ declare(strict_types=1);
 
 namespace Acteo\Exception;
 
-/** asteapta() sau verificaSiAsteapta() a depasit timpul maxim de asteptare. */
+/** Asteptarea unei verificari (`verifica()`, `asteapta()`) sau a unei poze (`imagini->asteapta()`) a depasit timpul maxim. */
 final class EroareTimeoutVerificare extends ActeoException {}

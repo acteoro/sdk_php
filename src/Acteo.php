@@ -17,7 +17,8 @@ use Psr\Http\Message\StreamFactoryInterface;
 /**
  * Clientul API-ului Acteo, organizat pe domenii: `$acteo->auto->rca`,
  * `$acteo->auto->itp`, `$acteo->auto->rovinieta`, `$acteo->auto->arr`,
- * `$acteo->auto->flota` si `$acteo->webhooks`.
+ * `$acteo->auto->flota`, `$acteo->auto->vin`, `$acteo->auto->numere`,
+ * `$acteo->auto->imagini` si `$acteo->webhooks`.
  *
  * Toate metodele arunca subclase de `ActeoException`. Erorile trecatoare
  * (retea, 5xx, throttle la polling) sunt reincercate automat, fara sa repete
@@ -31,12 +32,12 @@ use Psr\Http\Message\StreamFactoryInterface;
 final class Acteo
 {
     /** Versiunea acestui SDK, trimisa si in headerul `User-Agent`. */
-    public const VERSIUNE_SDK = '0.3.0';
+    public const VERSIUNE_SDK = '0.4.0';
 
     /** Adresa implicita a API-ului. */
     public const URL_IMPLICIT = 'https://api.acteo.ro';
 
-    /** Documentele unei masini (RCA, ITP, rovinieta, ARR) si flota. */
+    /** Documentele unei masini (RCA, ITP, rovinieta, ARR), flota, VIN, numere si poze. */
     public readonly ClientAuto $auto;
 
     /** Citirea webhook-urilor. */

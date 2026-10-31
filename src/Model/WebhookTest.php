@@ -7,7 +7,7 @@ namespace Acteo\Model;
 use Acteo\Internal\Decodor;
 
 /** Evenimentul `webhook.test`, trimis din butonul de test din dashboard. */
-final class WebhookTest
+final class WebhookTest implements WebhookNotificare
 {
     public const EVENIMENT = 'webhook.test';
 

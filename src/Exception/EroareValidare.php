@@ -6,7 +6,8 @@ namespace Acteo\Exception;
 
 /**
  * Datele trimise sunt invalide. Apare fie local, inainte de orice cerere (nu se
- * consuma nimic din cota), fie ca raspuns 400 de la API.
+ * consuma nimic din cota), fie ca raspuns 400 de la API, fie ca 422 cand sursa
+ * oficiala refuza valoarea (ex: `NUMAR_RESPINS` la numerele disponibile).
  */
 final class EroareValidare extends ActeoException
 {

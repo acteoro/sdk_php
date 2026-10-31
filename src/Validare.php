@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Acteo;
 
+use Acteo\Cerere\CerereImagine;
 use Acteo\Cerere\CerereVerificare;
 use Acteo\Cerere\VehiculNou;
 use Acteo\Enum\TipVerificare;
+use Acteo\Enum\UnghiImagine;
 use Acteo\Exception\EroareValidare;
 use Acteo\Internal\TintaVerificare;
 
@@ -20,9 +22,17 @@ final class Validare
     /** Toate tipurile de verificare acceptate de API, in ordine. */
     public const TIPURI_VERIFICARE = ['rca', 'itp', 'rovinieta', 'arr'];
 
+    /** Unghiurile acceptate pentru poza unei masini. */
+    public const UNGHIURI_IMAGINE = ['trei-sferturi', 'fata', 'profil', 'spate', 'trei-sferturi-dreapta', 'profil-dreapta'];
+
     private const JUDETE = 'AB|AR|AG|BC|BH|BN|BT|BV|BR|BZ|CS|CL|CJ|CT|CV|DB|DJ|GL|GR|GJ|HD|HR|IL|IS|IF|MM|MH|MS|NT|OT|PH|SM|SJ|SB|SV|TR|TM|TL|VS|VL|VN';
     private const NUMAR_REGEX = '/^(B\d{2,3}[A-Z]{2,3}|(' . self::JUDETE . ')\d{2}[A-Z]{2,3}|CD\d{3}[A-Z]{1,3}|TC\d{4}[A-Z]{2})$/i';
+    // Numerele verificate la DGPCI: judet (sau B), cifrele si exact trei litere.
+    private const NUMAR_DGPCI_REGEX = '/^(B\d{2,3}|(' . self::JUDETE . ')\d{2})[A-Z]{3}$/i';
     private const VIN_REGEX = '/^[A-HJ-NPR-Z0-9]{17}$/i';
+    private const TEXT_MASINA_REGEX = "/^[\\p{L}\\p{N} .\\/+&'()-]+$/u";
+    private const LUNGIME_TEXT_MASINA = 66;
+    private const AN_MINIM_IMAGINE = 1950;
     private const LUNGIME_VIN = 17;
     private const SERIE_TALON_REGEX = '/^(?=.*\d)[A-Z0-9]{6,20}$/';
     private const MESAJ_SERIE_TALON_INVALIDA = '`serieTalon` invalid: se asteapta numarul certificatului de inmatriculare, '
@@ -158,6 +168,92 @@ final class Validare
         }
 
         return $corp;
+    }
+
+    /**
+     * @internal VIN-ul pentru decodare, normalizat.
+     *
+     * @throws EroareValidare
+     */
+    public static function valideazaVinDecodare(string $vin): string
+    {
+        $n = self::normalizeaza($vin);
+        if (!self::esteVin($n)) {
+            throw self::eroare(self::explicaVin($n), 'vin');
+        }
+
+        return $n;
+    }
+
+    /**
+     * @internal Numarul pentru DGPCI, normalizat: judetul (sau B), cifrele si trei litere.
+     *
+     * @throws EroareValidare
+     */
+    public static function valideazaNumarDisponibil(string $numar): string
+    {
+        if (strpbrk($numar, '?*') !== false) {
+            throw self::eroare('API-ul verifica un singur numar complet, fara `?` sau `*`.', 'numar');
+        }
+        $n = self::normalizeaza($numar);
+        if ($n === '') {
+            throw self::eroare('Lipseste numarul de inmatriculare.', 'numar');
+        }
+        if (preg_match(self::NUMAR_DGPCI_REGEX, $n) !== 1) {
+            throw self::eroare("Numarul {$n} nu e complet: trimite indicativul judetului, cifrele si trei litere (ex: BV07ABC).", 'numar');
+        }
+
+        return $n;
+    }
+
+    /**
+     * @internal Corpul cererii de poza, validat ca in API.
+     *
+     * @return array{marca: string, model: string, an: int, unghi?: string, umbra?: bool}
+     *
+     * @throws EroareValidare
+     */
+    public static function valideazaCerereImagine(CerereImagine $cerere): array
+    {
+        $corp = [
+            'marca' => self::valideazaTextMasina($cerere->marca, 'marca'),
+            'model' => self::valideazaTextMasina($cerere->model, 'model'),
+            'an' => $cerere->an,
+        ];
+        $anMaxim = (int) date('Y') + 1;
+        if ($cerere->an < self::AN_MINIM_IMAGINE || $cerere->an > $anMaxim) {
+            throw self::eroare('`an` trebuie sa fie un numar intreg intre ' . self::AN_MINIM_IMAGINE . " si {$anMaxim}.", 'an');
+        }
+        if ($cerere->unghi !== null) {
+            $unghi = $cerere->unghi instanceof UnghiImagine ? $cerere->unghi : UnghiImagine::tryFrom($cerere->unghi);
+            if ($unghi === null) {
+                throw self::eroare('`unghi` poate fi: ' . implode(', ', self::UNGHIURI_IMAGINE) . '.', 'unghi', self::UNGHIURI_IMAGINE);
+            }
+            $corp['unghi'] = $unghi->value;
+        }
+        if ($cerere->umbra !== null) {
+            $corp['umbra'] = $cerere->umbra;
+        }
+
+        return $corp;
+    }
+
+    private static function valideazaTextMasina(string $valoare, string $camp): string
+    {
+        $t = trim($valoare);
+        if ($t === '') {
+            throw self::eroare("`{$camp}` nu poate fi gol.", $camp);
+        }
+        // Numaram caracterele, nu octetii; un text care nu e UTF-8 valid pica la regex.
+        $lungime = preg_match_all('/./su', $t);
+        if ($lungime !== false && $lungime > self::LUNGIME_TEXT_MASINA) {
+            throw self::eroare("`{$camp}` are cel mult " . self::LUNGIME_TEXT_MASINA . ' de caractere.', $camp);
+        }
+        if (preg_match(self::TEXT_MASINA_REGEX, $t) !== 1) {
+            throw self::eroare("`{$camp}` poate contine doar litere, cifre, spatii si . / + & ' ( ) -", $camp);
+        }
+
+        return $t;
     }
 
     /**

@@ -6,8 +6,17 @@ namespace Acteo;
 
 use Acteo\Exception\EroareWebhook;
 use Acteo\Internal\FormaInvalida;
+use Acteo\Model\WebhookAsigurareSchimbare;
 use Acteo\Model\WebhookDocumentExpira;
+use Acteo\Model\WebhookDosarEveniment;
+use Acteo\Model\WebhookDosarTermen;
+use Acteo\Model\WebhookFirmaDosar;
+use Acteo\Model\WebhookFirmaSchimbare;
+use Acteo\Model\WebhookMarcaExpira;
+use Acteo\Model\WebhookMarcaSchimbare;
+use Acteo\Model\WebhookNotificare;
 use Acteo\Model\WebhookRezultat;
+use Acteo\Model\WebhookTermenExpira;
 use Acteo\Model\WebhookTest;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -15,10 +24,27 @@ use Psr\Http\Message\ServerRequestInterface;
 final class Webhooks
 {
     /** Headerul cu cheia de webhook a contului (`whsec_...`). */
-    public const HEADER_CHEIE = 'x-verificrca-key';
+    public const HEADER_CHEIE = 'x-acteo-key';
 
-    /** Headerul cu numele evenimentului (`document.expira`, `webhook.test`). */
-    public const HEADER_EVENIMENT = 'x-verificrca-event';
+    /** Headerul cu numele evenimentului (`document.expira`, `webhook.test` etc.). */
+    public const HEADER_EVENIMENT = 'x-acteo-event';
+
+    // Numele vechi al headerului cu cheia, citit doar cand lipseste cel nou.
+    private const HEADER_CHEIE_VECHI = 'x-verificrca-key';
+
+    /** Clasa fiecarui eveniment de notificare, dupa `event`. */
+    private const EVENIMENTE = [
+        WebhookDocumentExpira::EVENIMENT => WebhookDocumentExpira::class,
+        WebhookDosarEveniment::EVENIMENT => WebhookDosarEveniment::class,
+        WebhookDosarTermen::EVENIMENT => WebhookDosarTermen::class,
+        WebhookFirmaSchimbare::EVENIMENT => WebhookFirmaSchimbare::class,
+        WebhookFirmaDosar::EVENIMENT => WebhookFirmaDosar::class,
+        WebhookMarcaSchimbare::EVENIMENT => WebhookMarcaSchimbare::class,
+        WebhookMarcaExpira::EVENIMENT => WebhookMarcaExpira::class,
+        WebhookAsigurareSchimbare::EVENIMENT => WebhookAsigurareSchimbare::class,
+        WebhookTermenExpira::EVENIMENT => WebhookTermenExpira::class,
+        WebhookTest::EVENIMENT => WebhookTest::class,
+    ];
 
     private function __construct() {}
 
@@ -41,10 +67,12 @@ final class Webhooks
     }
 
     /**
-     * Verifica si citeste o notificare de expirare (`document.expira`) sau un test
-     * (`webhook.test`) trimise la URL-ul de webhook al contului.
+     * Verifica si citeste o notificare trimisa la URL-ul de webhook al contului:
+     * expirarea unui document (`document.expira`), evenimentele celorlalte
+     * servicii (`dosar.*`, `firma.*`, `marca.*`, `asigurare.schimbare`,
+     * `termen.expira`) sau testul din dashboard (`webhook.test`).
      *
-     * Cheia vine in headerul `X-Verificrca-Key` si e comparata in timp constant cu
+     * Cheia vine in headerul `X-Acteo-Key` si e comparata in timp constant cu
      * cea din dashboard. Pastreaza URL-ul pe HTTPS.
      *
      * @param string|array<mixed> $corp corpul cererii sau JSON-ul deja decodat
@@ -52,27 +80,31 @@ final class Webhooks
      *   `$request->headers->all()` din Laravel/Symfony sau o cerere PSR-7
      * @param string $cheie cheia de webhook din dashboard (`whsec_...`)
      *
+     * @return WebhookDocumentExpira|WebhookDosarEveniment|WebhookDosarTermen|WebhookFirmaSchimbare|WebhookFirmaDosar|WebhookMarcaSchimbare|WebhookMarcaExpira|WebhookAsigurareSchimbare|WebhookTermenExpira|WebhookTest
+     *
      * @throws EroareWebhook cheia lipseste din configurare (CHEIE_NECONFIGURATA), din header sau nu se
      *   potriveste (CHEIE_INVALIDA), ori payloadul e invalid (JSON_INVALID, PAYLOAD_INVALID)
      */
-    public static function verificaWebhookNotificare(string|array $corp, array|ServerRequestInterface $headere, string $cheie): WebhookDocumentExpira|WebhookTest
+    public static function verificaWebhookNotificare(string|array $corp, array|ServerRequestInterface $headere, string $cheie): WebhookNotificare
     {
         if ($cheie === '') {
             throw new EroareWebhook('Lipseste cheia de webhook din configurare.', cod: 'CHEIE_NECONFIGURATA');
         }
-        $primita = self::citesteHeader($headere, self::HEADER_CHEIE);
+        $primita = self::citesteHeader($headere, self::HEADER_CHEIE) ?? self::citesteHeader($headere, self::HEADER_CHEIE_VECHI);
         if ($primita === null || !hash_equals($cheie, $primita)) {
-            throw new EroareWebhook('Cheia din headerul X-Verificrca-Key lipseste sau nu se potriveste.', cod: 'CHEIE_INVALIDA');
+            throw new EroareWebhook('Cheia din headerul X-Acteo-Key lipseste sau nu se potriveste.', cod: 'CHEIE_INVALIDA');
         }
 
         $date = self::parseazaCorp($corp);
 
-        return self::decodeaza($date, static function (array $d): WebhookDocumentExpira|WebhookTest {
-            return match ($d['event'] ?? null) {
-                WebhookDocumentExpira::EVENIMENT => WebhookDocumentExpira::fromArray($d),
-                WebhookTest::EVENIMENT => WebhookTest::fromArray($d),
-                default => throw new FormaInvalida('event: se astepta "document.expira" sau "webhook.test"'),
-            };
+        return self::decodeaza($date, static function (array $d): WebhookNotificare {
+            $event = $d['event'] ?? null;
+            $clasa = is_string($event) ? (self::EVENIMENTE[$event] ?? null) : null;
+            if ($clasa === null) {
+                throw new FormaInvalida('event: se astepta unul dintre "' . implode('", "', array_keys(self::EVENIMENTE)) . '"');
+            }
+
+            return $clasa::fromArray($d);
         });
     }
 

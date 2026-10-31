@@ -14,8 +14,6 @@ use Acteo\Internal\Ceas;
 use Acteo\Internal\Decodor;
 use Acteo\Internal\Http;
 use Acteo\Internal\Raspuns;
-use Acteo\Model\Cota;
-use Acteo\Model\Limite;
 use Acteo\Model\VerificareFinala;
 use Acteo\Model\VerificareInCurs;
 
@@ -174,7 +172,7 @@ final class ClientVerificari
 
     private function interpreteaza(Raspuns $raspuns, ?string $serieSasiu, ?int $sinceImplicit): VerificareFinala|VerificareInCurs
     {
-        $limite = self::limite($raspuns);
+        $limite = $raspuns->limite();
 
         return Http::decodeaza($raspuns, function (array $d) use ($serieSasiu, $sinceImplicit, $limite): VerificareFinala|VerificareInCurs {
             $status = $d['status'] ?? null;
@@ -206,21 +204,6 @@ final class ClientVerificari
 
             return VerificareFinala::fromArray($d, '', $limite);
         });
-    }
-
-    /** Cat mai ai din cota, din headerele `X-RateLimit-*`; null daca lipseste vreunul. */
-    private static function limite(Raspuns $raspuns): ?Limite
-    {
-        $valori = [];
-        foreach (['x-ratelimit-limit-day', 'x-ratelimit-remaining-day', 'x-ratelimit-limit-month', 'x-ratelimit-remaining-month'] as $nume) {
-            $valoare = $raspuns->header($nume);
-            if ($valoare === null || !is_numeric($valoare)) {
-                return null;
-            }
-            $valori[] = (int) $valoare;
-        }
-
-        return new Limite(new Cota($valori[0], $valori[1]), new Cota($valori[2], $valori[3]));
     }
 
     /** Citeste `since` din `pollUrl`, ca pollingul sa foloseasca ceasul serverului. */

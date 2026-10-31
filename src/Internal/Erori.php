@@ -40,6 +40,9 @@ final class Erori
                     : null;
 
                 return new EroareValidare($mesaj, $status, $cod, $hint, $corp, acceptate: $acceptate);
+            case 422:
+                // Sursa oficiala refuza valoarea trimisa (ex: NUMAR_RESPINS).
+                return new EroareValidare($mesaj, $status, $cod, $hint, $corp);
             case 401:
                 return new EroareAutentificare($mesaj, $status, $cod, $hint, $corp);
             case 402:
@@ -81,9 +84,18 @@ final class Erori
             );
         }
 
-        return $status >= 500
-            ? new EroareServer($mesaj, $status, $cod, $hint, $corp)
-            : new EroareHttp($mesaj, $status, $cod, $hint, $corp);
+        if ($status < 500) {
+            return new EroareHttp($mesaj, $status, $cod, $hint, $corp);
+        }
+
+        return new EroareServer(
+            $mesaj,
+            $status,
+            $cod,
+            $hint,
+            $corp,
+            retryAfterMs: self::retryAfterMs($headere['retry-after'] ?? null, $acumMs),
+        );
     }
 
     /** `Retry-After` vine in secunde sau ca data HTTP. */

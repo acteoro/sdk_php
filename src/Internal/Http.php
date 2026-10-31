@@ -12,6 +12,7 @@ use Acteo\Exception\EroareServer;
 use Acteo\Exception\EroareTimeoutVerificare;
 use Acteo\Exception\EroareValidare;
 use Psr\Http\Client\ClientExceptionInterface;
+use Psr\Http\Client\ClientInterface;
 
 /** @internal Trimite cereri catre API, cu maparea erorilor si retry. */
 final class Http
@@ -19,6 +20,9 @@ final class Http
     /** Coduri cURL care garanteaza ca cererea nu a plecat spre server: DNS, conexiune refuzata. */
     private const ERRNO_NEAJUNSA = [6, 7];
     private const ERRNO_TIMEOUT = 28;
+
+    /** @var array<int, ClientInterface> clientii cu timeout marit, dupa timeout */
+    private array $clientiLenti = [];
 
     public function __construct(private readonly Setari $s) {}
 
@@ -30,13 +34,23 @@ final class Http
      * @param array<string, mixed>|null $corp trimis ca JSON
      * @param int|null $termenMs momentul (ms) dupa care nu mai reincercam; o pauza care l-ar
      *   depasi opreste cererea cu `EroareTimeoutVerificare`
+     * @param int|null $timeoutMinimMs timeout minim pentru aceasta cerere, peste cel din setari
+     *   (ex: raspunsuri sincrone lente); se aplica doar clientului construit de SDK
      */
-    public function trimite(string $metoda, string $cale, bool $idempotenta, array $query = [], ?array $corp = null, ?int $termenMs = null): Raspuns
-    {
+    public function trimite(
+        string $metoda,
+        string $cale,
+        bool $idempotenta,
+        array $query = [],
+        ?array $corp = null,
+        ?int $termenMs = null,
+        ?int $timeoutMinimMs = null,
+    ): Raspuns {
+        $client = $this->client($timeoutMinimMs);
         $incercare = 0;
         while (true) {
             try {
-                return $this->trimiteOData($metoda, $cale, $query, $corp);
+                return $this->trimiteOData($client, $metoda, $cale, $query, $corp);
             } catch (EroareRetea|EroareServer|EroareLimita $e) {
                 $retry = $this->s->retry;
                 if ($retry === null || $incercare >= $retry->incercari || !self::sePoateReincerca($idempotenta, $e, $retry)) {
@@ -62,8 +76,17 @@ final class Http
             return $idempotenta || $e->neajunsa;
         }
         if ($e instanceof EroareServer) {
-            // 502/503/504 vin de la proxy: cererea nu a ajuns la aplicatie.
-            return $idempotenta || in_array($e->status, [502, 503, 504], true);
+            if ($idempotenta) {
+                return true;
+            }
+            // Cu `cod`, a raspuns chiar API-ul si cererea nu s-a taxat. Reincercam doar
+            // `OCUPAT`, care trece in cateva secunde; restul nu se rezolva repetand.
+            if ($e->cod !== null) {
+                return $e->cod === 'OCUPAT' && ($e->retryAfterMs ?? 0) <= $retry->intarziereMaximaMs;
+            }
+
+            // 502/503/504 fara cod vin de la proxy: cererea nu a ajuns la aplicatie.
+            return in_array($e->status, [502, 503, 504], true);
         }
         if ($e instanceof EroareLimita) {
             // Doar throttle-ul de polling e trecator; cota si plafonul de flota nu se reseteaza in secunde.
@@ -81,7 +104,7 @@ final class Http
         $baza = min($retry->intarziereInitialaMs * 2 ** min($incercare, 30), $retry->intarziereMaximaMs);
         $jitter = 0.8 + mt_rand() / mt_getrandmax() * 0.4;
         $pauza = (int) min(round($baza * $jitter), $retry->intarziereMaximaMs);
-        if ($e instanceof EroareLimita && $e->retryAfterMs !== null) {
+        if (($e instanceof EroareLimita || $e instanceof EroareServer) && $e->retryAfterMs !== null) {
             $pauza = max($pauza, $e->retryAfterMs);
         }
 
@@ -119,10 +142,24 @@ final class Http
     }
 
     /**
+     * Clientul HTTP pentru o cerere. PSR-18 nu are timeout per cerere, asa ca pentru
+     * un timeout minim mai mare construim (o singura data) un client separat.
+     */
+    private function client(?int $timeoutMinimMs): ClientInterface
+    {
+        $fabrica = $this->s->clientCuTimeout;
+        if ($timeoutMinimMs === null || $timeoutMinimMs <= $this->s->timeoutMs || $fabrica === null) {
+            return $this->s->http;
+        }
+
+        return $this->clientiLenti[$timeoutMinimMs] ??= $fabrica($timeoutMinimMs);
+    }
+
+    /**
      * @param array<string, string|null> $query
      * @param array<string, mixed>|null $corp
      */
-    private function trimiteOData(string $metoda, string $cale, array $query, ?array $corp): Raspuns
+    private function trimiteOData(ClientInterface $client, string $metoda, string $cale, array $query, ?array $corp): Raspuns
     {
         $url = $this->s->baseUrl . $cale;
         $parametri = array_filter($query, static fn(?string $v): bool => $v !== null);
@@ -146,7 +183,7 @@ final class Http
         }
 
         try {
-            $raspuns = $this->s->http->sendRequest($cerere);
+            $raspuns = $client->sendRequest($cerere);
         } catch (ClientExceptionInterface $e) {
             $timeout = self::esteTimeout($e);
             throw new EroareRetea(
