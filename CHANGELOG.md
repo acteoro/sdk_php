@@ -1,5 +1,9 @@
 # Changelog
 
+## acteo/api 0.4.1 (2026-10-31)
+
+- Documentație: fiecare verificare interoghează sursa oficială. `porneste()` întoarce o verificare în curs, iar rezultatul vine prin `asteapta()`, `rezultat()` sau webhook. `checkedAt` e descris ca momentul verificării. Codul nu se schimbă.
+
 ## acteo/api 0.4.0 (2026-10-31)
 
 - Corectură: `$acteo->webhooks->verificaNotificare()` (și `Webhooks::verificaWebhookNotificare()`) citește cheia din headerul `X-Acteo-Key`, cel trimis acum de API. Până acum căuta doar `X-Verificrca-Key`, așa că notificările reale erau respinse cu `CHEIE_INVALIDA`. Headerul vechi e citit în continuare când lipsește cel nou. `Webhooks::HEADER_CHEIE` e acum `'x-acteo-key'`, iar `Webhooks::HEADER_EVENIMENT` e `'x-acteo-event'`.
