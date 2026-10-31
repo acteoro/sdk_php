@@ -113,6 +113,94 @@ final class Decodor
     }
 
     /**
+     * Cheie obligatorie, valoare boolean sau null.
+     *
+     * @param array<mixed> $d
+     */
+    public static function boolSauNull(array $d, string $cheie, string $prefix): ?bool
+    {
+        $v = self::obligatoriu($d, $cheie, $prefix);
+
+        return $v === null ? null : self::bool($d, $cheie, $prefix);
+    }
+
+    /**
+     * Cheie obligatorie, valoare numar intreg sau null.
+     *
+     * @param array<mixed> $d
+     */
+    public static function intregSauNull(array $d, string $cheie, string $prefix): ?int
+    {
+        $v = self::obligatoriu($d, $cheie, $prefix);
+
+        return $v === null ? null : self::intreg($d, $cheie, $prefix);
+    }
+
+    /**
+     * Numar intreg dintr-o lista inchisa de valori (ex: pragurile 30 si 3).
+     *
+     * @param array<mixed> $d
+     * @param list<int> $permise
+     */
+    public static function intregDin(array $d, string $cheie, string $prefix, array $permise): int
+    {
+        $v = self::intreg($d, $cheie, $prefix);
+        if (!in_array($v, $permise, true)) {
+            throw new FormaInvalida(self::cale($prefix, $cheie) . ': valoare necunoscuta ' . self::descrie($v));
+        }
+
+        return $v;
+    }
+
+    /**
+     * @param array<mixed> $d
+     *
+     * @return list<string>
+     */
+    public static function listaSiruri(array $d, string $cheie, string $prefix): array
+    {
+        $rezultat = [];
+        foreach (self::lista($d, $cheie, $prefix) as $i => $v) {
+            if (!is_string($v)) {
+                throw self::gresit(self::cale($prefix, $cheie), (string) $i, 'text', $v);
+            }
+            $rezultat[] = $v;
+        }
+
+        return $rezultat;
+    }
+
+    /**
+     * @param array<mixed> $d
+     *
+     * @return list<int>
+     */
+    public static function listaIntregi(array $d, string $cheie, string $prefix): array
+    {
+        $lista = self::lista($d, $cheie, $prefix);
+        $rezultat = [];
+        foreach (array_keys($lista) as $i) {
+            $rezultat[] = self::intreg($lista, (string) $i, self::cale($prefix, $cheie));
+        }
+
+        return $rezultat;
+    }
+
+    /**
+     * Cheie obligatorie, valoare obiect sau null.
+     *
+     * @param array<mixed> $d
+     *
+     * @return array<mixed>|null
+     */
+    public static function obiectSauNull(array $d, string $cheie, string $prefix): ?array
+    {
+        $v = self::obligatoriu($d, $cheie, $prefix);
+
+        return $v === null ? null : self::obiect($d, $cheie, $prefix);
+    }
+
+    /**
      * @param array<mixed> $d
      *
      * @return array<mixed>
@@ -159,6 +247,23 @@ final class Decodor
         }
 
         return $caz;
+    }
+
+    /**
+     * Cheie obligatorie, valoare din enum sau null.
+     *
+     * @template T of \BackedEnum
+     *
+     * @param array<mixed> $d
+     * @param class-string<T> $enum
+     *
+     * @return T|null
+     */
+    public static function enumSauNull(array $d, string $cheie, string $prefix, string $enum): ?\BackedEnum
+    {
+        $v = self::obligatoriu($d, $cheie, $prefix);
+
+        return $v === null ? null : self::enum($d, $cheie, $prefix, $enum);
     }
 
     /** @param array<mixed> $d */

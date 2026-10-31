@@ -49,7 +49,7 @@ final class ActeoTest extends TestCase
         $c = $client->cerere();
         self::assertSame('https://api.acteo.ro/api/public/v1/verificare', (string) $c->getUri());
         self::assertSame('acteo-sdk-php/' . Acteo::VERSIUNE_SDK, $c->getHeaderLine('User-Agent'));
-        self::assertSame('0.3.0', Acteo::VERSIUNE_SDK);
+        self::assertSame('0.4.0', Acteo::VERSIUNE_SDK);
     }
 
     public function testCitesteCheiaDinActeoApiKeyApoiDinVerificrcaApiKey(): void
@@ -307,7 +307,7 @@ final class ActeoTest extends TestCase
     public function testWebhooksVerificaNotificare(): void
     {
         $corp = ['event' => 'webhook.test', 'id' => 'liv_1', 'mesaj' => 'test', 'trimisLa' => '2026-09-29T10:00:00.000Z'];
-        $n = Ajutor::acteo(new ClientFals())->webhooks->verificaNotificare($corp, ['X-Verificrca-Key' => 'whsec_abc'], 'whsec_abc');
+        $n = Ajutor::acteo(new ClientFals())->webhooks->verificaNotificare($corp, ['X-Acteo-Key' => 'whsec_abc'], 'whsec_abc');
         self::assertInstanceOf(WebhookTest::class, $n);
     }
 }

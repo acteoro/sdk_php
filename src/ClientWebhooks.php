@@ -5,8 +5,17 @@ declare(strict_types=1);
 namespace Acteo;
 
 use Acteo\Exception\EroareWebhook;
+use Acteo\Model\WebhookAsigurareSchimbare;
 use Acteo\Model\WebhookDocumentExpira;
+use Acteo\Model\WebhookDosarEveniment;
+use Acteo\Model\WebhookDosarTermen;
+use Acteo\Model\WebhookFirmaDosar;
+use Acteo\Model\WebhookFirmaSchimbare;
+use Acteo\Model\WebhookMarcaExpira;
+use Acteo\Model\WebhookMarcaSchimbare;
+use Acteo\Model\WebhookNotificare;
 use Acteo\Model\WebhookRezultat;
+use Acteo\Model\WebhookTermenExpira;
 use Acteo\Model\WebhookTest;
 use Psr\Http\Message\ServerRequestInterface;
 
@@ -33,17 +42,21 @@ final class ClientWebhooks
     }
 
     /**
-     * Verifica cheia si citeste o notificare de expirare (`document.expira`) sau
-     * un test (`webhook.test`) trimise la URL-ul de webhook al contului.
+     * Verifica cheia si citeste o notificare trimisa la URL-ul de webhook al
+     * contului: `document.expira`, evenimentele celorlalte servicii (`dosar.*`,
+     * `firma.*`, `marca.*`, `asigurare.schimbare`, `termen.expira`) sau
+     * `webhook.test`. Cheia vine in headerul `X-Acteo-Key`.
      *
      * @param string|array<mixed> $corp corpul cererii sau JSON-ul deja decodat
      * @param array<mixed>|ServerRequestInterface $headere `getallheaders()`, `$_SERVER`,
      *   `$request->headers->all()` din Laravel/Symfony sau o cerere PSR-7
      * @param string $cheie cheia de webhook din cont (`whsec_...`)
      *
+     * @return WebhookDocumentExpira|WebhookDosarEveniment|WebhookDosarTermen|WebhookFirmaSchimbare|WebhookFirmaDosar|WebhookMarcaSchimbare|WebhookMarcaExpira|WebhookAsigurareSchimbare|WebhookTermenExpira|WebhookTest
+     *
      * @throws EroareWebhook cheie lipsa, gresita sau corp invalid
      */
-    public function verificaNotificare(string|array $corp, array|ServerRequestInterface $headere, string $cheie): WebhookDocumentExpira|WebhookTest
+    public function verificaNotificare(string|array $corp, array|ServerRequestInterface $headere, string $cheie): WebhookNotificare
     {
         return Webhooks::verificaWebhookNotificare($corp, $headere, $cheie);
     }

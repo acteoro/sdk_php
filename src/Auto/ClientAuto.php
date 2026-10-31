@@ -9,7 +9,7 @@ use Acteo\ClientVerificari;
 use Acteo\Internal\Ceas;
 use Acteo\Internal\Http;
 
-/** Domeniul auto: documentele unei masini si flota monitorizata. Il accesezi prin `$acteo->auto`. */
+/** Domeniul auto: documentele unei masini, flota monitorizata, VIN, numere si poze. Il accesezi prin `$acteo->auto`. */
 final class ClientAuto
 {
     /** Asigurarea RCA: `$acteo->auto->rca->verifica('B123ABC')`. */
@@ -27,6 +27,15 @@ final class ClientAuto
     /** Vehiculele monitorizate din cont: `lista()`, `adauga()`, `sterge()`. */
     public readonly ClientVehicule $flota;
 
+    /** Decodarea VIN: `$acteo->auto->vin->decodeaza('WVWZZZ1KZBW000000')`. */
+    public readonly ClientVin $vin;
+
+    /** Numere disponibile la DGPCI: `$acteo->auto->numere->verifica('BV07ABC')`. */
+    public readonly ClientNumere $numere;
+
+    /** Pozele masinilor: `$acteo->auto->imagini->obtine(['marca' => ..., 'model' => ..., 'an' => ...])`. */
+    public readonly ClientImagini $imagini;
+
     /** @internal */
     public function __construct(Http $http, Ceas $ceas)
     {
@@ -36,5 +45,8 @@ final class ClientAuto
         $this->rovinieta = new ClientRovinieta($verificari);
         $this->arr = new ClientArr($verificari);
         $this->flota = new ClientVehicule($http);
+        $this->vin = new ClientVin($http);
+        $this->numere = new ClientNumere($http);
+        $this->imagini = new ClientImagini($http, $ceas);
     }
 }

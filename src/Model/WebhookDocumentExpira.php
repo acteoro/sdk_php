@@ -8,7 +8,7 @@ use Acteo\Enum\TipVerificare;
 use Acteo\Internal\Decodor;
 
 /** Evenimentul `document.expira`: un document a intrat intr-un prag de expirare. */
-final class WebhookDocumentExpira
+final class WebhookDocumentExpira implements WebhookNotificare
 {
     public const EVENIMENT = 'document.expira';
 

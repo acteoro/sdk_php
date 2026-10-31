@@ -47,6 +47,8 @@ final class Configurare
             userAgent: $profil->agent . '/' . $versiune . ($userAgent !== '' ? ' ' . $userAgent : ''),
             ceas: $ceas ?? new CeasSistem(),
             urlImplicit: $profil->urlImplicit,
+            timeoutMs: $timeoutMs,
+            clientCuTimeout: $httpClient === null ? static fn(int $ms): ClientInterface => FabricaHttp::client(null, $ms) : null,
         );
     }
 

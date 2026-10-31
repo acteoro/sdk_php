@@ -1,6 +1,6 @@
 {
     "name": "acteo/api",
-    "description": "SDK oficial PHP pentru API-ul public Acteo: verificare RCA, ITP, rovinieta si copie conforma ARR dupa numar de inmatriculare sau serie de sasiu (VIN), plus gestionarea flotei si webhook-uri.",
+    "description": "SDK oficial PHP pentru API-ul public Acteo: verificare RCA, ITP, rovinieta si copie conforma ARR dupa numar de inmatriculare sau serie de sasiu (VIN), plus decodare VIN, numere de inmatriculare disponibile, poze de masini, gestionarea flotei si webhook-uri.",
     "type": "library",
     "license": "MIT",
     "keywords": [
@@ -18,6 +18,13 @@
         "romania",
         "flota",
         "webhook",
+        "decodare vin",
+        "vin decoder",
+        "numere disponibile",
+        "numar inmatriculare disponibil",
+        "dgpci",
+        "imagini masini",
+        "poze masini",
         "sdk",
         "api client",
         "psr-18",

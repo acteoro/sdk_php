@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Acteo\Tests;
 
+use Acteo\Auto\ClientNumere;
 use Acteo\Exception\ActeoException;
 use Acteo\Exception\EroareAutentificare;
 use Acteo\Exception\EroareConflict;
@@ -21,12 +22,14 @@ use Acteo\Internal\Erori;
 use Acteo\Internal\FabricaHttp;
 use Acteo\Internal\Http;
 use Acteo\Internal\Raspuns;
+use Acteo\Internal\Setari;
 use Acteo\Internal\SetariRetry;
 use Acteo\Tests\Ajutor\Ajutor;
 use Acteo\Tests\Ajutor\CeasFals;
 use Acteo\Tests\Ajutor\ClientFals;
 use Acteo\Tests\Ajutor\ExceptieRetea;
 use GuzzleHttp\Exception\ConnectException;
+use GuzzleHttp\Psr7\HttpFactory;
 use GuzzleHttp\Psr7\Request;
 use PHPUnit\Framework\TestCase;
 
@@ -98,6 +101,7 @@ final class HttpTest extends TestCase
             [404, ['error' => 'Vehicul negasit.', 'code' => 'NEGASIT'], EroareNegasit::class],
             [409, ['error' => 'Exista deja.', 'code' => 'VEHICUL_EXISTENT'], EroareConflict::class],
             [418, ['error' => 'Ceainic.'], EroareHttp::class],
+            [422, ['error' => 'Respins.', 'code' => 'NUMAR_RESPINS'], EroareValidare::class],
             [500, ['error' => 'Eroare interna.'], EroareServer::class],
         ];
         foreach ($cazuri as [$status, $corp, $clasa]) {
@@ -259,6 +263,7 @@ final class HttpTest extends TestCase
         }
         $limita = new EroareLimita('x', 429, 'PREA_MULTE_CERERI', retryAfterMs: 7000);
         self::assertGreaterThanOrEqual(7000, Http::pauza($retry, 0, $limita));
+        self::assertGreaterThanOrEqual(9000, Http::pauza($retry, 0, new EroareServer('x', 503, 'OCUPAT', retryAfterMs: 9000)));
     }
 
     public function testSePoateReincerca(): void
@@ -269,6 +274,13 @@ final class HttpTest extends TestCase
         self::assertTrue(Http::sePoateReincerca(false, new EroareRetea('x', neajunsa: true), $r));
         self::assertTrue(Http::sePoateReincerca(false, new EroareServer('x', 504), $r));
         self::assertFalse(Http::sePoateReincerca(false, new EroareServer('x', 500), $r));
+        // Cu `cod` a raspuns API-ul: la POST se repeta doar OCUPAT, si doar cu o pauza acceptabila.
+        self::assertTrue(Http::sePoateReincerca(false, new EroareServer('x', 503, 'OCUPAT', retryAfterMs: 10000), $r));
+        self::assertTrue(Http::sePoateReincerca(false, new EroareServer('x', 503, 'OCUPAT'), $r));
+        self::assertFalse(Http::sePoateReincerca(false, new EroareServer('x', 503, 'OCUPAT', retryAfterMs: 10001), $r));
+        self::assertFalse(Http::sePoateReincerca(false, new EroareServer('x', 503, 'INDISPONIBIL'), $r));
+        self::assertFalse(Http::sePoateReincerca(false, new EroareServer('x', 504, 'TIMEOUT'), $r));
+        self::assertTrue(Http::sePoateReincerca(true, new EroareServer('x', 503, 'INDISPONIBIL'), $r));
         self::assertFalse(Http::sePoateReincerca(true, new EroareLimita('x', 429, 'COTA_ATINSA'), $r));
         self::assertTrue(Http::sePoateReincerca(true, new EroareLimita('x', 429, 'PREA_MULTE_CERERI', retryAfterMs: 2000), $r));
         self::assertFalse(Http::sePoateReincerca(false, new EroareLimita('x', 429, 'PREA_MULTE_CERERI'), $r));
@@ -308,6 +320,88 @@ final class HttpTest extends TestCase
         $e = Erori::dinRaspuns(301, ['location' => 'https://example.com/api/public/v1/vehicule'], '', 0, 'https://api.acteo.ro');
         self::assertInstanceOf(EroareHttp::class, $e);
         self::assertStringContainsString('https://api.acteo.ro', (string) $e->hint);
+    }
+
+    public function testServerulCitesteRetryAfter(): void
+    {
+        $e = Erori::dinRaspuns(503, ['retry-after' => '10'], ['error' => 'Ocupat', 'code' => 'OCUPAT'], 0);
+        self::assertInstanceOf(EroareServer::class, $e);
+        self::assertSame('OCUPAT', $e->cod);
+        self::assertSame(10000, $e->retryAfterMs);
+        self::assertNull(Erori::dinRaspuns(502, [], '<html>Bad Gateway</html>', 0)->cod);
+    }
+
+    public function testTimeoutulMinimFolosesteUnClientSeparatConstruitODataSingura(): void
+    {
+        $normal = new ClientFals(ClientFals::raspuns(200, []));
+        $lent = new ClientFals(ClientFals::raspuns(200, []), ClientFals::raspuns(200, []));
+        $construite = [];
+        $fabrica = new HttpFactory();
+        $setari = new Setari(
+            Ajutor::CHEIE,
+            'https://api.acteo.ro',
+            null,
+            $normal,
+            $fabrica,
+            $fabrica,
+            'acteo-sdk-php/test',
+            new CeasFals(),
+            timeoutMs: 1000,
+            clientCuTimeout: static function (int $ms) use (&$construite, $lent): ClientFals {
+                $construite[] = $ms;
+
+                return $lent;
+            },
+        );
+        $http = new Http($setari);
+        $http->trimite('POST', '/x', false, [], ['a' => 1], timeoutMinimMs: 150000);
+        $http->trimite('POST', '/x', false, [], ['a' => 1], timeoutMinimMs: 150000);
+        $http->trimite('GET', '/x', true);
+
+        self::assertSame([150000], $construite);
+        self::assertCount(2, $lent->cereri);
+        self::assertCount(1, $normal->cereri);
+    }
+
+    public function testTimeoutulMinimNuMicsoreazaTimeoutulSiNuAtingeClientulInjectat(): void
+    {
+        $client = new ClientFals(ClientFals::raspuns(200, []), ClientFals::raspuns(200, []));
+        $fabrica = new HttpFactory();
+        $mare = new Setari(Ajutor::CHEIE, 'https://api.acteo.ro', null, $client, $fabrica, $fabrica, 'x', new CeasFals(), timeoutMs: 200000, clientCuTimeout: static function (int $ms): ClientFals {
+            throw new \LogicException('nu trebuia construit');
+        });
+        (new Http($mare))->trimite('POST', '/x', false, [], ['a' => 1], timeoutMinimMs: 150000);
+        (new Http(Ajutor::setari($client)))->trimite('POST', '/x', false, [], ['a' => 1], timeoutMinimMs: 150000);
+        self::assertCount(2, $client->cereri);
+    }
+
+    public function testNumereleDisponibileCerUnClientCuTimeoutDeCelPutin150Secunde(): void
+    {
+        $lent = new ClientFals(ClientFals::raspuns(200, ['numar' => 'BV07ABC', 'disponibil' => true, 'mesaj' => null]));
+        $construite = [];
+        $fabrica = new HttpFactory();
+        $setari = new Setari(
+            Ajutor::CHEIE,
+            'https://api.acteo.ro',
+            null,
+            new ClientFals(),
+            $fabrica,
+            $fabrica,
+            'x',
+            new CeasFals(),
+            timeoutMs: 1000,
+            clientCuTimeout: static function (int $ms) use (&$construite, $lent): ClientFals {
+                $construite[] = $ms;
+
+                return $lent;
+            },
+        );
+        self::assertTrue((new ClientNumere(new Http($setari)))->verifica('BV07ABC')->disponibil);
+        self::assertSame([150000], $construite);
+
+        $guzzle = FabricaHttp::client(null, 150000);
+        self::assertInstanceOf(\GuzzleHttp\Client::class, $guzzle);
+        self::assertEquals(150, $guzzle->getConfig('timeout'));
     }
 
     public function testClientulConstruitDeSdkNuUrmeazaRedirecturi(): void
