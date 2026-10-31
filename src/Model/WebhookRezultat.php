@@ -18,7 +18,7 @@ final class WebhookRezultat
      * @param string|null $serieSasiu seria de sasiu trimisa in cerere, daca exista
      * @param StatusWebhook $status starea documentului sau `Error` cand sursa oficiala nu a raspuns
      * @param VerificareFinala|null $result rezultatul complet, null la `Error`
-     * @param \DateTimeImmutable|null $checkedAt cand a fost interogata sursa, null la eroare
+     * @param \DateTimeImmutable|null $checkedAt momentul verificarii, null la eroare
      * @param string|null $error mesajul de eroare, doar la `Error`
      */
     public function __construct(

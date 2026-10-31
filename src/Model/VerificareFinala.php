@@ -16,7 +16,7 @@ final class VerificareFinala
      * @param string $query identificatorul dupa care s-a cautat (la RCA cu VIN, acesta e VIN-ul)
      * @param string|null $numarInmatriculare numarul verificat, null cand cautarea s-a facut doar dupa VIN
      * @param string|null $serieSasiu VIN-ul verificat, null cand cautarea s-a facut doar dupa numar
-     * @param \DateTimeImmutable $checkedAt cand a fost interogata sursa oficiala
+     * @param \DateTimeImmutable $checkedAt momentul verificarii
      * @param StatusDocument $status starea documentului
      * @param \DateTimeImmutable|null $expiresAt data expirarii, null daca nu exista document valabil
      * @param string|null $requestId prezent doar cand ai trimis `callbackUrl`; apare si in webhook
