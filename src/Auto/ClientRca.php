@@ -30,7 +30,6 @@ final class ClientRca extends ClientDocument
 
     /**
      * Verifica polita RCA si asteapta rezultatul final de la sursa oficiala.
-     * Daca vehiculul a fost verificat de curand, rezultatul vine imediat.
      *
      * @param string|array{numar?: string|null, vin?: string|null}|IdentificatorRca $identificator
      *

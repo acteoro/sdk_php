@@ -38,8 +38,8 @@ final class ClientVerificari
     /**
      * Porneste o verificare si consuma o unitate din cota planului.
      *
-     * Daca vehiculul a fost verificat de curand, primesti imediat rezultatul
-     * existent. Altfel verificarea intra in coada si primesti o `VerificareInCurs`;
+     * Fiecare cerere interogheaza sursa oficiala: verificarea intra in coada si
+     * primesti o `VerificareInCurs`;
      * rezultatul il afli cu `rezultat()`, `asteapta()` sau prin webhook, daca ai
      * trimis `callbackUrl`.
      *
