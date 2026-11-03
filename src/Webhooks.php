@@ -16,6 +16,7 @@ use Acteo\Model\WebhookMarcaExpira;
 use Acteo\Model\WebhookMarcaSchimbare;
 use Acteo\Model\WebhookNotificare;
 use Acteo\Model\WebhookRezultat;
+use Acteo\Model\WebhookRezultatPad;
 use Acteo\Model\WebhookTermenExpira;
 use Acteo\Model\WebhookTest;
 use Psr\Http\Message\ServerRequestInterface;
@@ -64,6 +65,24 @@ final class Webhooks
         $date = self::parseazaCorp($corp);
 
         return self::decodeaza($date, static fn(array $d): WebhookRezultat => WebhookRezultat::fromArray($d));
+    }
+
+    /**
+     * Citeste rezultatul trimis la `callbackUrl` dupa o verificare de polita PAD.
+     * Corpul nu contine CNP-ul, doar `cnpMascat`.
+     *
+     * Foloseste un `callbackUrl` pe HTTPS, greu de ghicit, si potriveste
+     * `requestId` cu cel primit la `casa->pad->porneste()` inainte sa ai incredere in continut.
+     *
+     * @param string|array<mixed> $corp corpul cererii (`file_get_contents('php://input')`) sau JSON-ul deja decodat
+     *
+     * @throws EroareWebhook corpul nu e JSON (JSON_INVALID) sau nu e un rezultat PAD valid (PAYLOAD_INVALID)
+     */
+    public static function parseazaWebhookRezultatPad(string|array $corp): WebhookRezultatPad
+    {
+        $date = self::parseazaCorp($corp);
+
+        return self::decodeaza($date, static fn(array $d): WebhookRezultatPad => WebhookRezultatPad::fromArray($d));
     }
 
     /**

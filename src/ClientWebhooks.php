@@ -15,6 +15,7 @@ use Acteo\Model\WebhookMarcaExpira;
 use Acteo\Model\WebhookMarcaSchimbare;
 use Acteo\Model\WebhookNotificare;
 use Acteo\Model\WebhookRezultat;
+use Acteo\Model\WebhookRezultatPad;
 use Acteo\Model\WebhookTermenExpira;
 use Acteo\Model\WebhookTest;
 use Psr\Http\Message\ServerRequestInterface;
@@ -39,6 +40,18 @@ final class ClientWebhooks
     public function parseazaRezultat(string|array $corp): WebhookRezultat
     {
         return Webhooks::parseazaWebhookRezultat($corp);
+    }
+
+    /**
+     * Citeste rezultatul trimis la `callbackUrl` dupa o verificare de polita PAD.
+     *
+     * @param string|array<mixed> $corp corpul cererii (`file_get_contents('php://input')`) sau JSON-ul deja decodat
+     *
+     * @throws EroareWebhook corpul nu e JSON (JSON_INVALID) sau nu e un rezultat PAD valid (PAYLOAD_INVALID)
+     */
+    public function parseazaRezultatPad(string|array $corp): WebhookRezultatPad
+    {
+        return Webhooks::parseazaWebhookRezultatPad($corp);
     }
 
     /**

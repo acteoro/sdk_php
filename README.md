@@ -19,7 +19,7 @@ $rca = $acteo->auto->rca->verifica('B123ABC');
 echo $rca->status->value, ' ', $rca->expiresAt?->format('Y-m-d'); // valid 2027-03-01
 ```
 
-Apelurile sunt grupate pe domeniu și pe document, deci citești din cod ce verifici: `$acteo->auto->rca`, `$acteo->auto->itp`, `$acteo->auto->rovinieta`, `$acteo->auto->arr`, plus `$acteo->auto->flota` pentru vehiculele din cont, `$acteo->auto->vin`, `$acteo->auto->numere` și `$acteo->auto->imagini` pentru celelalte produse și `$acteo->webhooks` pentru notificări.
+Apelurile sunt grupate pe domeniu și pe document, deci citești din cod ce verifici: `$acteo->auto->rca`, `$acteo->auto->itp`, `$acteo->auto->rovinieta`, `$acteo->auto->arr`, plus `$acteo->auto->flota` pentru vehiculele din cont, `$acteo->auto->vin`, `$acteo->auto->numere` și `$acteo->auto->imagini` pentru celelalte produse, `$acteo->casa->pad` pentru polița PAD a unei locuințe și `$acteo->webhooks` pentru notificări.
 
 ## Cuprins
 
@@ -49,6 +49,7 @@ Apelurile sunt grupate pe domeniu și pe document, deci citești din cod ce veri
 | Decodare VIN | `$acteo->auto->vin->decodeaza()` | Marca, modelul, anul de fabricație și structura seriei de șasiu |
 | Număr de înmatriculare disponibil | `$acteo->auto->numere->verifica()` | Dacă numărul e liber la DGPCI și poate fi rezervat |
 | Poza unei mașini | `$acteo->auto->imagini->obtine()` | Link spre o poză de studio (WebP transparent) după marcă, model și an |
+| Verificare poliță PAD | `$acteo->casa->pad->verifica()` | Dacă o locuință are poliță PAD valabilă la o dată, după CNP-ul proprietarului și localitate, de la PADROM |
 | Webhook-uri | `$acteo->webhooks` | Rezultatul verificării la URL-ul tău, alerte `document.expira` la 30, 14 și 3 zile, plus evenimentele celorlalte servicii din cont |
 | Validare locală | | Numărul de înmatriculare, VIN-ul și numărul talonului sunt verificate înainte de cerere, deci o greșeală de tastare nu consumă din cotă |
 | Excepții tipate | | O clasă de excepție pentru fiecare situație, cu mesaj în română și `hint` de rezolvare |
@@ -344,6 +345,65 @@ Primește `['marca' => ..., 'model' => ..., 'an' => ...]`, opțional cu `unghi` 
 
 Ca `obtine()`, dar cât timp poza e `InLucru` o cere din nou, cu pauzele din `Retry-After` (cel puțin 10 secunde). Întoarce primul răspuns care nu mai e `InLucru`. După `timeoutMs` (implicit 2 minute) aruncă `EroareTimeoutVerificare` cu `cod` `TIMEOUT_IMAGINE`. Cererile intermediare nu se taxează, dar intră în plafonul zilnic de poze generice.
 
+### `casa->pad->verifica(array|CererePolitaPad $cerere, ?OptiuniAsteptare $optiuni = null)`
+
+Verifică dacă există o poliță PAD (asigurarea obligatorie a locuinței) valabilă pentru un CNP și o localitate, la o anumită dată. Răspunsul vine de la PADROM și poate dura câteva minute, așa că `verifica()` pornește cererea și așteaptă rezultatul, ca la documentele auto. Cere abonamentul API Verificare poliță PAD, separat de cel de verificări auto.
+
+Ai nevoie de acordul proprietarului. Prin `'acord' => true` confirmi că îl ai sau că ești chiar proprietarul; fără el, cererea e respinsă local.
+
+Primește un array sau `new CererePolitaPad(...)`, cu aceleași câmpuri:
+
+| Câmp | Obligatoriu | Descriere |
+|---|---|---|
+| `cnp` | da | CNP-ul proprietarului, 13 cifre. Spațiile și liniuțele sunt acceptate. Data și cifra de control sunt verificate local. API-ul nu păstrează CNP-ul și îl arată în răspuns doar mascat (`cnpMascat`). |
+| `judet` | da, dacă nu trimiți `judetId` | Numele județului, cu sau fără diacritice, sau indicativul (`'CJ'`, `'B'`) |
+| `localitate` | da, în afară de București | Orașul, comuna sau satul |
+| `sector` | doar la București | Sectorul, de la 1 la 6 |
+| `judetId`, `localitateId` | nu | Id-urile din nomenclatorul PADROM, în locul numelor |
+| `data` | nu | Data verificată, `AAAA-LL-ZZ`, cel mult 365 de zile înainte sau după azi. Implicit azi |
+| `acord` | da | `true`: ai acordul proprietarului sau ești chiar proprietarul |
+
+```php
+$pad = $acteo->casa->pad->verifica([
+    'cnp' => '<CNP-ul proprietarului>',
+    'judet' => 'Cluj',
+    'localitate' => 'Cluj-Napoca',
+    'acord' => true,
+]);
+
+if ($pad->valabila) {
+    echo "Poliță PAD valabilă: {$pad->serieNumar}, {$pad->distribuitor}";
+} else {
+    echo "PADROM nu a găsit o poliță valabilă la {$pad->laData}";
+}
+```
+
+Întoarce un `RezultatPolitaPad` cu `status` `StatusPolitaPad::Done`, `valabila` (`true` când PADROM a găsit o poliță valabilă la data cerută), `serieNumar` și `distribuitor` (sau `null`), `verificatLa` (`DateTimeImmutable`), plus `requestId`, `cnpMascat` (de exemplu `1*********012`), `judet`, `localitate` și `laData`, ca să legi răspunsul de cererea ta. `OptiuniAsteptare` e aceeași ca la documentele auto: `intervalMs` (implicit 3000, minim 2000) și `timeoutMs` (implicit 5 minute).
+
+Se taxează o unitate doar când PADROM răspunde, inclusiv când refuză datele trimise (`EroareVerificare` cu `cod` `INVALID_IDENTIFIER`). Dacă PADROM nu răspunde, primești `EroareVerificare` cu `UPSTREAM_UNAVAILABLE`, `UPSTREAM_TIMEOUT`, `UPSTREAM_BLOCKED` sau `UPSTREAM_CHANGED` și nu se taxează nimic. Un județ sau o localitate pe care nu le găsim dau `EroareValidare` (HTTP 422) cu `hint`, tot netaxat. Prea multe verificări în curs deodată dau `EroareLimita` cu `cod` `OCUPAT`.
+
+### `casa->pad->porneste(array|CererePolitaPad $cerere, ?string $callbackUrl = null)`
+
+Pornește verificarea fără să aștepte și întoarce un `PolitaPadPornita`, cu `requestId` și `queuedAt`. Cu `$callbackUrl`, API-ul trimite rezultatul la acel URL când e gata.
+
+```php
+use Acteo\Cerere\CererePolitaPad;
+
+$p = $acteo->casa->pad->porneste(
+    new CererePolitaPad(cnp: '<CNP-ul proprietarului>', judet: 'B', sector: 3, acord: true),
+    callbackUrl: 'https://example.com/webhooks/acteo/pad-7h2m',
+);
+$pad = $acteo->casa->pad->asteapta($p); // sau mai târziu, cu $p->requestId
+```
+
+### `casa->pad->rezultat(PolitaPadPornita|string $referinta)`
+
+Interoghează o singură dată, după `requestId` sau după obiectul primit de la `porneste()`. Întoarce un `RezultatPolitaPad` cu `status` `StatusPolitaPad::Processing` sau `StatusPolitaPad::Done`; o verificare încheiată cu eroare aruncă `EroareVerificare`. CNP-ul nu apare în URL. Nu consumă din cotă. Cererile se păstrează 30 de zile; după aceea, sau pentru un id din alt cont, primești `EroareNegasit`.
+
+### `casa->pad->asteapta(PolitaPadPornita|string $referinta, ?OptiuniAsteptare $optiuni = null)`
+
+Face polling până la răspunsul PADROM, cu aceleași opțiuni ca `verifica()`. Nu consumă din cotă.
+
 ### Utilitare de validare
 
 ```php
@@ -354,6 +414,7 @@ Validare::esteVinValid('WVWZZZ1JZXW00000I');        // false: litera I nu e perm
 Validare::esteSerieTalonValida('I00639603F');       // true
 Validare::normalizeaza(' b-123 abc ');              // 'B123ABC'
 Validare::normalizeazaSerieTalon(' i 00639603-f '); // 'I00639603F'
+Validare::esteCnpValid('1900101400013');            // false: cifra de control nu se potrivește
 ```
 
 Le poți folosi pentru formularele tale, ca să validezi datele înainte să ajungă la server.
@@ -393,6 +454,23 @@ http_response_code(200);
 ```
 
 Pune un segment greu de ghicit în URL, păstrează-l pe HTTPS și verifică dacă `requestId`-ul primit corespunde celui întors de `porneste()` înainte să te bazezi pe conținut.
+
+### Rezultatul unei verificări de poliță PAD (`callbackUrl`)
+
+Când trimiți `$callbackUrl` la `casa->pad->porneste()`, primești un POST cu răspunsul PADROM: `StatusPolitaPad::Done` cu `valabila`, `serieNumar` și `distribuitor`, sau `StatusPolitaPad::Error` cu `code` și `error`. Corpul conține doar `cnpMascat`, niciodată CNP-ul.
+
+```php
+use Acteo\Enum\StatusPolitaPad;
+
+// public/webhooks/acteo-pad-7h2m.php
+$r = $acteo->webhooks->parseazaRezultatPad(file_get_contents('php://input'));
+if ($r->status === StatusPolitaPad::Done) {
+    salveaza($r->requestId, $r->valabila);
+}
+http_response_code(200);
+```
+
+Aceleași reguli ca mai sus: URL pe HTTPS, cu un segment greu de ghicit, și `requestId` potrivit cu cel de la `porneste()`.
 
 ### Notificări din cont (`document.expira` și celelalte evenimente)
 
@@ -659,6 +737,10 @@ Apelezi `$acteo->auto->numere->verifica('BV07ABC')`. SDK-ul trimite numărul la 
 ### Ce aflu dintr-o serie de șasiu (VIN)?
 
 Cu `$acteo->auto->vin->decodeaza($vin)` afli marca, modelul și anul de fabricație, plus structura VIN-ului: producătorul (WMI), țara, cifra de control și anii posibili. Câmpul `sursaAn` spune de unde vine anul, iar `modelePosibile` apare când datele nu indică un singur model.
+
+### Pot verifica prin API dacă o casă are poliță PAD?
+
+Da, cu `$acteo->casa->pad->verifica()`. Trimiți CNP-ul proprietarului, județul și localitatea locuinței, iar PADROM răspunde dacă există o poliță PAD valabilă la data cerută (implicit azi). Ai nevoie de acordul proprietarului și de abonamentul API Verificare poliță PAD. Pentru o singură locuință, fără cod, folosește [verificarea PAD de pe site](https://acteo.ro/verificare-pad).
 
 ### Există SDK pentru Node.js sau Python?
 

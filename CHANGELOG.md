@@ -1,5 +1,13 @@
 # Changelog
 
+## acteo/api (nelansat)
+
+- `$acteo->casa->pad`: verificarea poliței PAD a unei locuințe, după CNP-ul proprietarului și localitate, cu răspunsul de la PADROM. Metodele sunt cele de la documentele auto: `verifica()`, `porneste()` (cu `$callbackUrl` opțional), `rezultat()` și `asteapta()`. Cere abonamentul API Verificare poliță PAD și acordul proprietarului (`'acord' => true`).
+- CNP-ul, acordul, data și `callbackUrl` sunt validate local, înainte de cerere, deci o greșeală nu consumă din cotă. Răspunsurile arată CNP-ul doar mascat (`cnpMascat`).
+- `$acteo->webhooks->parseazaRezultatPad()` și `Webhooks::parseazaWebhookRezultatPad()` citesc rezultatul trimis la `callbackUrl`.
+- `Validare::esteCnpValid()` verifică local forma unui CNP: data de naștere și cifra de control.
+- Clase noi: `CererePolitaPad`, `PolitaPadPornita`, `RezultatPolitaPad`, `WebhookRezultatPad` și enum-ul `StatusPolitaPad`.
+
 ## acteo/api 0.5.0 (2026-11-03)
 
 API-ul trimite acum codurile de eroare din contract. Dacă ai cod care compară `$e->cod` cu valorile vechi, schimbă-l după tabelul de mai jos. Clasele de eroare și statusurile HTTP rămân aceleași.

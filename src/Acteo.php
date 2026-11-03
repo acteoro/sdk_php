@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Acteo;
 
 use Acteo\Auto\ClientAuto;
+use Acteo\Casa\ClientCasa;
 use Acteo\Exception\EroareConfigurare;
 use Acteo\Internal\Ceas;
 use Acteo\Internal\Configurare;
@@ -18,7 +19,7 @@ use Psr\Http\Message\StreamFactoryInterface;
  * Clientul API-ului Acteo, organizat pe domenii: `$acteo->auto->rca`,
  * `$acteo->auto->itp`, `$acteo->auto->rovinieta`, `$acteo->auto->arr`,
  * `$acteo->auto->flota`, `$acteo->auto->vin`, `$acteo->auto->numere`,
- * `$acteo->auto->imagini` si `$acteo->webhooks`.
+ * `$acteo->auto->imagini`, `$acteo->casa->pad` si `$acteo->webhooks`.
  *
  * Toate metodele arunca subclase de `ActeoException`. Erorile trecatoare
  * (retea, 5xx, throttle la polling) sunt reincercate automat, fara sa repete
@@ -39,6 +40,9 @@ final class Acteo
 
     /** Documentele unei masini (RCA, ITP, rovinieta, ARR), flota, VIN, numere si poze. */
     public readonly ClientAuto $auto;
+
+    /** Locuinta: verificarea politei PAD. */
+    public readonly ClientCasa $casa;
 
     /** Citirea webhook-urilor. */
     public readonly ClientWebhooks $webhooks;
@@ -92,7 +96,9 @@ final class Acteo
             $ceas,
         );
 
-        $this->auto = new ClientAuto(new Http($setari), $setari->ceas);
+        $http = new Http($setari);
+        $this->auto = new ClientAuto($http, $setari->ceas);
+        $this->casa = new ClientCasa($http, $setari->ceas);
         $this->webhooks = new ClientWebhooks();
     }
 }

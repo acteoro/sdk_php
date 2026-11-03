@@ -250,6 +250,27 @@ final class Decodor
     }
 
     /**
+     * Valoare din enum, doar dintre cazurile permise (ex: un webhook nu are `processing`).
+     *
+     * @template T of \BackedEnum
+     *
+     * @param array<mixed> $d
+     * @param class-string<T> $enum
+     * @param list<T> $permise
+     *
+     * @return T
+     */
+    public static function enumDin(array $d, string $cheie, string $prefix, string $enum, array $permise): \BackedEnum
+    {
+        $caz = self::enum($d, $cheie, $prefix, $enum);
+        if (!in_array($caz, $permise, true)) {
+            throw new FormaInvalida(self::cale($prefix, $cheie) . ': valoare neasteptata ' . self::descrie($caz->value));
+        }
+
+        return $caz;
+    }
+
+    /**
      * Cheie obligatorie, valoare din enum sau null.
      *
      * @template T of \BackedEnum

@@ -16,6 +16,29 @@ final class ValidareTest extends TestCase
 {
     private const VIN = 'WVWZZZ1JZXW000001';
 
+    /** @return iterable<string, array{string}> */
+    public static function cnpuriGresite(): iterable
+    {
+        yield 'cifra de control gresita' => ['1900101400013'];
+        yield 'luna 13' => ['1901301400012'];
+        yield '30 februarie' => ['1900230400012'];
+        yield 'prea scurt' => ['190010140001'];
+        yield 'prima cifra 0' => ['0900101400012'];
+        yield 'gol' => [''];
+    }
+
+    #[DataProvider('cnpuriGresite')]
+    public function testEsteCnpValidRespinge(string $cnp): void
+    {
+        self::assertFalse(Validare::esteCnpValid($cnp));
+    }
+
+    public function testEsteCnpValidAcceptaCnpSinteticCuSpatiiSauLiniute(): void
+    {
+        self::assertTrue(Validare::esteCnpValid('1900101400012'));
+        self::assertTrue(Validare::esteCnpValid('190 0101-400012'));
+    }
+
     public function testNormalizeaza(): void
     {
         self::assertSame('B123ABC', Validare::normalizeaza(' b-123 abc '));

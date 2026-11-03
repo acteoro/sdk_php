@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Acteo;
 
 use Acteo\Cerere\CerereImagine;
+use Acteo\Cerere\CererePolitaPad;
 use Acteo\Cerere\CerereVerificare;
 use Acteo\Cerere\VehiculNou;
 use Acteo\Enum\TipVerificare;
@@ -37,6 +38,8 @@ final class Validare
     private const SERIE_TALON_REGEX = '/^(?=.*\d)[A-Z0-9]{6,20}$/';
     private const MESAJ_SERIE_TALON_INVALIDA = '`serieTalon` invalid: se asteapta numarul certificatului de inmatriculare, '
         . 'tiparit jos pe talon (ex: I00639603F), adica 6-20 litere si cifre.';
+
+    private const PONDERI_CNP = [2, 7, 9, 1, 4, 6, 3, 5, 8, 2, 7, 9];
 
     private function __construct() {}
 
@@ -236,6 +239,89 @@ final class Validare
         }
 
         return $corp;
+    }
+
+    /**
+     * Verifica un CNP romanesc: 13 cifre, o data de nastere reala si cifra de
+     * control. Spatiile si liniutele sunt ignorate. Nu spune daca CNP-ul exista.
+     *
+     * Exemplu: `Validare::esteCnpValid('1900101400013')` intoarce `false` (cifra de control nu se potriveste).
+     */
+    public static function esteCnpValid(string $cnp): bool
+    {
+        $c = (string) preg_replace('/\D/', '', $cnp);
+        if (preg_match('/^[1-9]\d{12}$/', $c) !== 1) {
+            return false;
+        }
+        $d = array_map('intval', str_split($c));
+        $luna = $d[3] * 10 + $d[4];
+        $zi = $d[5] * 10 + $d[6];
+        // Secolul dupa prima cifra (1/2: 1900, 3/4: 1800, 5/6: 2000, 7/8/9: rezidenti, tratati ca 1900).
+        $an = match ($d[0]) {
+            3, 4 => 1800,
+            5, 6 => 2000,
+            default => 1900,
+        } + $d[1] * 10 + $d[2];
+        if ($luna < 1 || $luna > 12 || $zi < 1 || !checkdate($luna, $zi, $an)) {
+            return false;
+        }
+        $suma = 0;
+        foreach (self::PONDERI_CNP as $i => $p) {
+            $suma += $p * $d[$i];
+        }
+        $suma %= 11;
+
+        return ($suma === 10 ? 1 : $suma) === $d[12];
+    }
+
+    /**
+     * Corpul cererii PAD, validat local: CNP, acord, data si `callbackUrl`.
+     * Judetul si localitatea le potriveste API-ul pe nomenclatorul PADROM.
+     *
+     * @return array<string, mixed>
+     *
+     * @throws EroareValidare CNP, acord, data sau `callbackUrl` invalide
+     */
+    public static function valideazaCererePolitaPad(CererePolitaPad $cerere, ?string $callbackUrl = null): array
+    {
+        if (trim($cerere->cnp) === '') {
+            throw self::eroare('Lipseste `cnp`.', 'cnp');
+        }
+        $cnp = (string) preg_replace('/\D/', '', $cerere->cnp);
+        // Mesajul nu repeta CNP-ul: ajunge des in loguri.
+        if (!self::esteCnpValid($cnp)) {
+            throw self::eroare('CNP invalid: verifica cele 13 cifre, data sau cifra de control nu se potrivesc.', 'cnp');
+        }
+        if (!$cerere->acord) {
+            throw self::eroare('Lipseste acordul: trimite `acord: true` (ai acordul proprietarului sau esti chiar proprietarul).', 'acord');
+        }
+        if ($cerere->data !== null && !self::esteDataZi($cerere->data)) {
+            throw self::eroare('`data` trebuie sa fie o data reala, AAAA-LL-ZZ (ex: 2026-11-03).', 'data');
+        }
+        $url = self::valideazaCallbackUrl($callbackUrl);
+
+        $corp = ['cnp' => $cnp];
+        foreach (['judet', 'localitate', 'sector', 'judetId', 'localitateId', 'data'] as $camp) {
+            if ($cerere->{$camp} !== null) {
+                $corp[$camp] = $cerere->{$camp};
+            }
+        }
+        $corp['acord'] = true;
+        if ($url !== null) {
+            $corp['callbackUrl'] = $url;
+        }
+
+        return $corp;
+    }
+
+    /** O data reala `AAAA-LL-ZZ` (2026-02-30 nu trece). */
+    private static function esteDataZi(string $s): bool
+    {
+        if (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $s, $m) !== 1) {
+            return false;
+        }
+
+        return checkdate((int) $m[2], (int) $m[3], (int) $m[1]);
     }
 
     private static function valideazaTextMasina(string $valoare, string $camp): string

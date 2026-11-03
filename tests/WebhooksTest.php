@@ -7,6 +7,7 @@ namespace Acteo\Tests;
 use Acteo\Enum\CampFirma;
 use Acteo\Enum\OficiuMarca;
 use Acteo\Enum\PragMarca;
+use Acteo\Enum\StatusPolitaPad;
 use Acteo\Enum\StatusWebhook;
 use Acteo\Enum\StatutAsigurare;
 use Acteo\Exception\EroareWebhook;
@@ -93,6 +94,32 @@ final class WebhooksTest extends TestCase
         self::assertSame('NOT_FOUND', $w->code);
         self::assertSame('NOT_FOUND', $w->result?->code);
         self::assertNull($w->error);
+    }
+
+    public function testParseazaRezultatPad(): void
+    {
+        $baza = [
+            'requestId' => '3f2c8a54-0000-4000-8000-000000000000',
+            'cnpMascat' => '1*********012',
+            'judet' => 'Cluj',
+            'localitate' => 'Cluj-Napoca',
+            'laData' => '2026-11-03',
+        ];
+        $gata = $baza + ['status' => 'done', 'valabila' => true, 'serieNumar' => 'PAD-0001', 'distribuitor' => null, 'verificatLa' => '2026-11-03T10:02:00.000Z'];
+        $r = Ajutor::acteo(new \Acteo\Tests\Ajutor\ClientFals())->webhooks->parseazaRezultatPad(json_encode($gata, JSON_THROW_ON_ERROR));
+        self::assertSame(StatusPolitaPad::Done, $r->status);
+        self::assertTrue($r->valabila);
+        self::assertSame('PAD-0001', $r->serieNumar);
+        self::assertInstanceOf(\DateTimeImmutable::class, $r->verificatLa);
+        self::assertNull($r->code);
+
+        $e = Webhooks::parseazaWebhookRezultatPad($baza + ['status' => 'error', 'code' => 'UPSTREAM_CHANGED', 'error' => 'Sursa s-a schimbat.']);
+        self::assertSame(StatusPolitaPad::Error, $e->status);
+        self::assertSame('UPSTREAM_CHANGED', $e->code);
+        self::assertNull($e->valabila);
+
+        $invalid = $this->eroare(static fn() => Webhooks::parseazaWebhookRezultatPad($baza + ['status' => 'processing']));
+        self::assertSame('PAYLOAD_INVALID', $invalid->cod);
     }
 
     public function testRespingeJsonInvalid(): void
