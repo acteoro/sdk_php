@@ -101,7 +101,7 @@ final class HttpTest extends TestCase
             [404, ['error' => 'Vehicul negasit.', 'code' => 'NEGASIT'], EroareNegasit::class],
             [409, ['error' => 'Exista deja.', 'code' => 'VEHICUL_EXISTENT'], EroareConflict::class],
             [418, ['error' => 'Ceainic.'], EroareHttp::class],
-            [422, ['error' => 'Respins.', 'code' => 'NUMAR_RESPINS'], EroareValidare::class],
+            [422, ['error' => 'Respins.', 'code' => 'INVALID_IDENTIFIER'], EroareValidare::class],
             [500, ['error' => 'Eroare interna.'], EroareServer::class],
         ];
         foreach ($cazuri as [$status, $corp, $clasa]) {
@@ -125,8 +125,23 @@ final class HttpTest extends TestCase
         self::assertSame('LIMIT_ATINS', $i->cod);
     }
 
+    public function testLimita429CuCodurileNoi(): void
+    {
+        $zi = Erori::dinRaspuns(429, ['retry-after' => '3600'], ['error' => 'Limita zilnica atinsa.', 'code' => 'DAILY_LIMIT_REACHED', 'dailyUsage' => '300/300'], 0);
+        self::assertInstanceOf(EroareLimita::class, $zi);
+        self::assertSame('DAILY_LIMIT_REACHED', $zi->cod);
+        self::assertSame(3600000, $zi->retryAfterMs);
+        self::assertSame('300/300', $zi->utilizareZi);
+
+        $plan = Erori::dinRaspuns(429, [], ['error' => 'Limita lunara atinsa.', 'code' => 'PLAN_LIMIT_REACHED', 'monthlyUsage' => '10000/10000'], 0);
+        self::assertInstanceOf(EroareLimita::class, $plan);
+        self::assertSame('PLAN_LIMIT_REACHED', $plan->cod);
+        self::assertNull($plan->retryAfterMs);
+    }
+
     public function testLimita429(): void
     {
+        // Un server mai vechi, fara cod: SDK-ul pune singur COTA_ATINSA.
         $cota = Erori::dinRaspuns(429, [], ['error' => 'Limita atinsa.', 'dailyUsage' => '300/300', 'monthlyUsage' => '4000/10000'], 0);
         self::assertInstanceOf(EroareLimita::class, $cota);
         self::assertSame('COTA_ATINSA', $cota->cod);
@@ -279,9 +294,14 @@ final class HttpTest extends TestCase
         self::assertTrue(Http::sePoateReincerca(false, new EroareServer('x', 503, 'OCUPAT'), $r));
         self::assertFalse(Http::sePoateReincerca(false, new EroareServer('x', 503, 'OCUPAT', retryAfterMs: 10001), $r));
         self::assertFalse(Http::sePoateReincerca(false, new EroareServer('x', 503, 'INDISPONIBIL'), $r));
-        self::assertFalse(Http::sePoateReincerca(false, new EroareServer('x', 504, 'TIMEOUT'), $r));
+        self::assertFalse(Http::sePoateReincerca(false, new EroareServer('x', 504, 'UPSTREAM_TIMEOUT'), $r));
+        self::assertFalse(Http::sePoateReincerca(false, new EroareServer('x', 502, 'UPSTREAM_UNAVAILABLE'), $r));
+        self::assertFalse(Http::sePoateReincerca(false, new EroareServer('x', 503, 'UPSTREAM_BLOCKED', retryAfterMs: 600000), $r));
+        self::assertFalse(Http::sePoateReincerca(false, new EroareServer('x', 503, 'UPSTREAM_CHANGED', retryAfterMs: 600000), $r));
         self::assertTrue(Http::sePoateReincerca(true, new EroareServer('x', 503, 'INDISPONIBIL'), $r));
         self::assertFalse(Http::sePoateReincerca(true, new EroareLimita('x', 429, 'COTA_ATINSA'), $r));
+        self::assertFalse(Http::sePoateReincerca(true, new EroareLimita('x', 429, 'DAILY_LIMIT_REACHED', retryAfterMs: 2000), $r));
+        self::assertFalse(Http::sePoateReincerca(true, new EroareLimita('x', 429, 'PLAN_LIMIT_REACHED'), $r));
         self::assertTrue(Http::sePoateReincerca(true, new EroareLimita('x', 429, 'PREA_MULTE_CERERI', retryAfterMs: 2000), $r));
         self::assertFalse(Http::sePoateReincerca(false, new EroareLimita('x', 429, 'PREA_MULTE_CERERI'), $r));
         self::assertFalse(Http::sePoateReincerca(true, new ActeoException('x'), $r));

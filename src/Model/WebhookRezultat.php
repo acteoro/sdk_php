@@ -20,6 +20,7 @@ final class WebhookRezultat
      * @param VerificareFinala|null $result rezultatul complet, null la `Error`
      * @param \DateTimeImmutable|null $checkedAt momentul verificarii, null la eroare
      * @param string|null $error mesajul de eroare, doar la `Error`
+     * @param string|null $code la `Error`, motivul (`CodEroare::ESEC_VERIFICARE`); la `NotFound`, `NOT_FOUND`
      */
     public function __construct(
         public readonly string $requestId,
@@ -30,6 +31,7 @@ final class WebhookRezultat
         public readonly ?VerificareFinala $result,
         public readonly ?\DateTimeImmutable $checkedAt,
         public readonly ?string $error = null,
+        public readonly ?string $code = null,
     ) {}
 
     /**
@@ -53,6 +55,7 @@ final class WebhookRezultat
             result: $result,
             checkedAt: Decodor::dataSauNull($d, 'checkedAt', ''),
             error: Decodor::sirOptional($d, 'error', ''),
+            code: Decodor::sirOptional($d, 'code', ''),
         );
     }
 }

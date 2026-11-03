@@ -47,7 +47,7 @@ final class ClientImagini
      *
      * @throws \Acteo\Exception\EroareValidare marca, model, an, unghi sau umbra invalide
      * @throws \Acteo\Exception\EroarePlanInactiv lipseste abonamentul de imagini masini
-     * @throws \Acteo\Exception\EroareLimita cota atinsa (LIMIT_ATINS) sau prea multe poze generice azi (PLAFON_NETAXAT)
+     * @throws \Acteo\Exception\EroareLimita cota atinsa (DAILY_LIMIT_REACHED, PLAN_LIMIT_REACHED) sau prea multe poze generice azi (PLAFON_NETAXAT)
      */
     public function obtine(array|CerereImagine $cerere): ImagineMasina
     {

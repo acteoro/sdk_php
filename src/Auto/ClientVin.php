@@ -28,7 +28,7 @@ final class ClientVin
      *
      * @throws \Acteo\Exception\EroareValidare VIN invalid, local sau HTTP 400
      * @throws \Acteo\Exception\EroarePlanInactiv lipseste abonamentul de decodare VIN
-     * @throws \Acteo\Exception\EroareLimita cota atinsa (LIMIT_ATINS) sau prea multe decodari fara rezultat (PLAFON_NETAXAT)
+     * @throws \Acteo\Exception\EroareLimita cota atinsa (DAILY_LIMIT_REACHED, PLAN_LIMIT_REACHED) sau prea multe decodari fara rezultat (PLAFON_NETAXAT)
      */
     public function decodeaza(string $vin): DecodareVin
     {

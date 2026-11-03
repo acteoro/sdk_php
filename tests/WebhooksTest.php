@@ -68,9 +68,31 @@ final class WebhooksTest extends TestCase
             'status' => 'error',
             'result' => null,
             'checkedAt' => null,
-            'error' => 'Verificarea nu s-a putut finaliza.',
+            'error' => 'Sursa oficiala nu a raspuns in timpul maxim.',
+            'code' => 'UPSTREAM_TIMEOUT',
         ]);
         self::assertSame(StatusWebhook::Error, $w->status);
+        self::assertSame('UPSTREAM_TIMEOUT', $w->code);
+    }
+
+    public function testRezultatulNotFoundPoartaCode(): void
+    {
+        $rezultat = ['status' => 'not_found', 'expiresAt' => null, 'code' => 'NOT_FOUND', 'campNou' => 'ignorat'] + Ajutor::REZULTAT_VALID;
+        $w = Webhooks::parseazaWebhookRezultat([
+            'requestId' => 'req_3',
+            'tip' => 'rca',
+            'query' => 'B123ABC',
+            'serieSasiu' => null,
+            'status' => 'not_found',
+            'result' => $rezultat,
+            'checkedAt' => '2026-09-20T10:00:00.000Z',
+            'code' => 'NOT_FOUND',
+            'altCampNou' => 1,
+        ]);
+        self::assertSame(StatusWebhook::NotFound, $w->status);
+        self::assertSame('NOT_FOUND', $w->code);
+        self::assertSame('NOT_FOUND', $w->result?->code);
+        self::assertNull($w->error);
     }
 
     public function testRespingeJsonInvalid(): void

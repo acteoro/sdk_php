@@ -33,8 +33,9 @@ final class ClientRovinieta extends ClientDocument
      * @param array{numar?: string, vin?: string, serieTalon?: string}|IdentificatorRovinieta $identificator
      *
      * @throws \Acteo\Exception\EroareValidare lipseste sau e invalid unul dintre identificatori, local
-     * @throws \Acteo\Exception\EroareLimita cota zilnica sau lunara atinsa
-     * @throws \Acteo\Exception\EroareVerificare sursa oficiala nu a putut fi interogata sau a refuzat datele
+     * @throws \Acteo\Exception\EroareLimita cota atinsa (DAILY_LIMIT_REACHED, PLAN_LIMIT_REACHED)
+     * @throws \Acteo\Exception\EroareServer sursa oficiala oprita temporar (UPSTREAM_BLOCKED, UPSTREAM_CHANGED); netaxat
+     * @throws \Acteo\Exception\EroareVerificare sursa oficiala nu a dat un raspuns sau a refuzat datele; motivul e in `cod`
      * @throws \Acteo\Exception\EroareTimeoutVerificare rezultatul nu a venit in `timeoutMs`
      */
     public function verifica(array|IdentificatorRovinieta $identificator, ?OptiuniAsteptare $optiuni = null): VerificareFinala
@@ -47,6 +48,9 @@ final class ClientRovinieta extends ClientDocument
      *
      * @param array{numar?: string, vin?: string, serieTalon?: string}|IdentificatorRovinieta $identificator
      * @param string|null $callbackUrl URL http(s) unde API-ul trimite rezultatul prin POST cand e gata
+     *
+     * @throws \Acteo\Exception\EroareLimita cota atinsa (DAILY_LIMIT_REACHED, PLAN_LIMIT_REACHED)
+     * @throws \Acteo\Exception\EroareServer sursa oficiala oprita temporar (UPSTREAM_BLOCKED, UPSTREAM_CHANGED); netaxat
      */
     public function porneste(array|IdentificatorRovinieta $identificator, ?string $callbackUrl = null): VerificareFinala|VerificareInCurs
     {

@@ -6,9 +6,14 @@ namespace Acteo\Exception;
 
 /**
  * 429: limita a fost atinsa. `cod` spune care:
- * - `COTA_ATINSA`: cota zilnica sau lunara de verificari a planului;
+ * - `DAILY_LIMIT_REACHED`: limita zilnica a planului; se reseteaza la miezul noptii,
+ *   ora Romaniei, iar `retryAfterMs` spune cat mai e;
+ * - `PLAN_LIMIT_REACHED`: limita lunara, sau plafonul consumului peste plan;
+ * - `SOLD_INSUFICIENT`: soldul preplatit nu acopera cererile peste plan;
+ * - `PLAFON_NETAXAT`: prea multe raspunsuri netaxate azi (decodari, poze generice);
  * - `LIMITA_FLOTA_ATINSA`: plafonul zilnic de adaugari/stergeri de vehicule;
- * - `PREA_MULTE_CERERI`: polling prea des (SDK-ul reincearca singur).
+ * - `PREA_MULTE_CERERI`: polling prea des (SDK-ul reincearca singur);
+ * - `COTA_ATINSA`: cota atinsa, de la un server mai vechi care nu trimite cod.
  */
 final class EroareLimita extends ActeoException
 {

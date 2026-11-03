@@ -9,7 +9,7 @@ namespace Acteo\Enum;
  * - `Valid`: valabil si departe de expirare;
  * - `Warning`: expira curand (RCA 14 zile, ITP 30, rovinieta 7, ARR 14);
  * - `Expired`: expirat sau inexistent, confirmat de sursa oficiala;
- * - `NotFound`: sursa nu a gasit vehiculul.
+ * - `NotFound`: sursa nu a gasit vehiculul (`code` e `NOT_FOUND`).
  */
 enum StatusDocument: string
 {

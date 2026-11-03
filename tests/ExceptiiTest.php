@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Acteo\Tests;
 
+use Acteo\Enum\CodEroare;
 use Acteo\Enum\StatusWebhook;
 use Acteo\Enum\TipVerificare;
 use Acteo\Exception\ActeoException;
@@ -54,5 +55,20 @@ final class ExceptiiTest extends TestCase
         self::assertSame(TipVerificare::Rovinieta, TipVerificare::from('rovinieta'));
         self::assertSame('not_found', StatusWebhook::NotFound->value);
         self::assertSame('error', StatusWebhook::Error->value);
+    }
+
+    public function testCodurileDeEroareInOrdineaDinDocumentatie(): void
+    {
+        self::assertSame([
+            'UPSTREAM_UNAVAILABLE', 'UPSTREAM_TIMEOUT', 'UPSTREAM_BLOCKED', 'UPSTREAM_CHANGED',
+            'DAILY_LIMIT_REACHED', 'PLAN_LIMIT_REACHED', 'NOT_FOUND', 'INVALID_IDENTIFIER',
+            'SOLD_INSUFICIENT', 'PLAFON_NETAXAT', 'OCUPAT', 'INDISPONIBIL', 'VIN_NEDECODAT',
+            'VIN_INVALID', 'ARR_NECESITA_PLAN', 'LIMIT_ATINS', 'VEHICUL_EXISTENT', 'NEGASIT',
+            'LIMITA_FLOTA_ATINSA',
+        ], CodEroare::valori());
+        self::assertContains(CodEroare::UpstreamBlocked, CodEroare::ESEC_VERIFICARE);
+        self::assertNotContains(CodEroare::DailyLimitReached, CodEroare::ESEC_VERIFICARE);
+        // Un cod necunoscut nu strica nimic: `cod` ramane text.
+        self::assertSame('COD_VIITOR', (new \Acteo\Exception\EroareServer('x', 503, 'COD_VIITOR'))->cod);
     }
 }

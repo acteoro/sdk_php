@@ -34,8 +34,9 @@ final class ClientRca extends ClientDocument
      * @param string|array{numar?: string|null, vin?: string|null}|IdentificatorRca $identificator
      *
      * @throws \Acteo\Exception\EroareValidare identificator invalid, local sau HTTP 400
-     * @throws \Acteo\Exception\EroareLimita cota zilnica sau lunara atinsa
-     * @throws \Acteo\Exception\EroareVerificare sursa oficiala nu a putut fi interogata sau a refuzat datele
+     * @throws \Acteo\Exception\EroareLimita cota atinsa (DAILY_LIMIT_REACHED, PLAN_LIMIT_REACHED)
+     * @throws \Acteo\Exception\EroareServer sursa oficiala oprita temporar (UPSTREAM_BLOCKED, UPSTREAM_CHANGED); netaxat
+     * @throws \Acteo\Exception\EroareVerificare sursa oficiala nu a dat un raspuns sau a refuzat datele; motivul e in `cod`
      * @throws \Acteo\Exception\EroareTimeoutVerificare rezultatul nu a venit in `timeoutMs`
      */
     public function verifica(string|array|IdentificatorRca $identificator, ?OptiuniAsteptare $optiuni = null): VerificareFinala
@@ -49,6 +50,9 @@ final class ClientRca extends ClientDocument
      *
      * @param string|array{numar?: string|null, vin?: string|null}|IdentificatorRca $identificator
      * @param string|null $callbackUrl URL http(s) unde API-ul trimite rezultatul prin POST cand e gata
+     *
+     * @throws \Acteo\Exception\EroareLimita cota atinsa (DAILY_LIMIT_REACHED, PLAN_LIMIT_REACHED)
+     * @throws \Acteo\Exception\EroareServer sursa oficiala oprita temporar (UPSTREAM_BLOCKED, UPSTREAM_CHANGED); netaxat
      */
     public function porneste(string|array|IdentificatorRca $identificator, ?string $callbackUrl = null): VerificareFinala|VerificareInCurs
     {

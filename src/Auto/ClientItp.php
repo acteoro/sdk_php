@@ -30,8 +30,9 @@ final class ClientItp extends ClientDocument
      * @param string $vin seria de sasiu, 17 caractere
      *
      * @throws \Acteo\Exception\EroareValidare VIN invalid (inclusiv un numar de inmatriculare), local
-     * @throws \Acteo\Exception\EroareLimita cota zilnica sau lunara atinsa
-     * @throws \Acteo\Exception\EroareVerificare sursa oficiala nu a putut fi interogata sau a refuzat datele
+     * @throws \Acteo\Exception\EroareLimita cota atinsa (DAILY_LIMIT_REACHED, PLAN_LIMIT_REACHED)
+     * @throws \Acteo\Exception\EroareServer sursa oficiala oprita temporar (UPSTREAM_BLOCKED, UPSTREAM_CHANGED); netaxat
+     * @throws \Acteo\Exception\EroareVerificare sursa oficiala nu a dat un raspuns sau a refuzat datele; motivul e in `cod`
      * @throws \Acteo\Exception\EroareTimeoutVerificare rezultatul nu a venit in `timeoutMs`
      */
     public function verifica(string $vin, ?OptiuniAsteptare $optiuni = null): VerificareFinala
@@ -43,6 +44,9 @@ final class ClientItp extends ClientDocument
      * Porneste verificarea fara sa astepte.
      *
      * @param string|null $callbackUrl URL http(s) unde API-ul trimite rezultatul prin POST cand e gata
+     *
+     * @throws \Acteo\Exception\EroareLimita cota atinsa (DAILY_LIMIT_REACHED, PLAN_LIMIT_REACHED)
+     * @throws \Acteo\Exception\EroareServer sursa oficiala oprita temporar (UPSTREAM_BLOCKED, UPSTREAM_CHANGED); netaxat
      */
     public function porneste(string $vin, ?string $callbackUrl = null): VerificareFinala|VerificareInCurs
     {

@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Acteo\Exception;
 
 /**
- * 5xx: eroare pe serverul API-ului. Cererile sigure se reincearca automat. La
- * numerele disponibile, `cod` spune de ce: `OCUPAT`, `INDISPONIBIL`,
- * `EROARE_DGPCI` sau `TIMEOUT`; cererea nu s-a taxat.
+ * 5xx: eroare pe serverul API-ului sau la sursa oficiala. Cererile sigure se
+ * reincearca automat. Cand `cod` exista, cererea nu s-a taxat:
+ * - `UPSTREAM_UNAVAILABLE` (502), `UPSTREAM_TIMEOUT` (504): sursa oficiala nu a raspuns;
+ * - `UPSTREAM_BLOCKED`, `UPSTREAM_CHANGED` (503): sursa e oprita temporar, reia dupa `retryAfterMs`;
+ * - `OCUPAT`, `INDISPONIBIL` (503): verificarea nu poate porni acum.
  */
 final class EroareServer extends ActeoException
 {

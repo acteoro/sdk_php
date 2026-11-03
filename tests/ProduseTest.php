@@ -153,14 +153,14 @@ final class ProduseTest extends TestCase
         self::assertSame(['numar' => 'B123ABC'], $ok->corp());
     }
 
-    public function testNumarRespins422EsteEroareValidare(): void
+    public function testInvalidIdentifier422EsteEroareValidare(): void
     {
-        $client = new ClientFals(ClientFals::raspuns(422, ['error' => 'Respins', 'code' => 'NUMAR_RESPINS']));
+        $client = new ClientFals(ClientFals::raspuns(422, ['error' => 'Respins', 'code' => 'INVALID_IDENTIFIER']));
         try {
             self::acteo($client)->auto->numere->verifica('BV07ABC');
             self::fail('trebuia sa arunce');
         } catch (EroareValidare $e) {
-            self::assertSame('NUMAR_RESPINS', $e->cod);
+            self::assertSame('INVALID_IDENTIFIER', $e->cod);
             self::assertSame(422, $e->status);
         }
     }
@@ -193,7 +193,7 @@ final class ProduseTest extends TestCase
     /** @return list<array{int, string}> */
     public static function eroriNerepetabile(): array
     {
-        return [[504, 'TIMEOUT'], [502, 'EROARE_DGPCI'], [503, 'INDISPONIBIL']];
+        return [[504, 'UPSTREAM_TIMEOUT'], [502, 'UPSTREAM_UNAVAILABLE'], [503, 'UPSTREAM_BLOCKED'], [503, 'UPSTREAM_CHANGED'], [503, 'INDISPONIBIL']];
     }
 
     #[DataProvider('eroriNerepetabile')]

@@ -22,6 +22,7 @@ final class VerificareFinala
      * @param string|null $requestId prezent doar cand ai trimis `callbackUrl`; apare si in webhook
      * @param string|null $hint recomandarea API-ului, ex: la RCA cerut doar dupa numar, sa trimiti si VIN-ul
      * @param Limite|null $limite cota ramasa dupa aceasta cerere, cand API-ul o trimite
+     * @param string|null $code doar la `StatusDocument::NotFound`: `NOT_FOUND`, identificatorul nu exista la sursa oficiala
      */
     public function __construct(
         public readonly TipVerificare $tip,
@@ -34,6 +35,7 @@ final class VerificareFinala
         public readonly ?string $requestId = null,
         public readonly ?string $hint = null,
         public readonly ?Limite $limite = null,
+        public readonly ?string $code = null,
     ) {}
 
     /**
@@ -54,6 +56,7 @@ final class VerificareFinala
             requestId: Decodor::sirOptional($d, 'requestId', $prefix),
             hint: Decodor::sirOptional($d, 'hint', $prefix),
             limite: $limite,
+            code: Decodor::sirOptional($d, 'code', $prefix),
         );
     }
 }

@@ -35,10 +35,10 @@ final class ClientNumere
      *
      * @param string $numar numarul complet: judetul, cifrele si trei litere, ex: `BV07ABC`
      *
-     * @throws \Acteo\Exception\EroareValidare numar invalid sau incomplet, ori refuzat de DGPCI (NUMAR_RESPINS)
+     * @throws \Acteo\Exception\EroareValidare numar invalid sau incomplet, ori refuzat de DGPCI (INVALID_IDENTIFIER)
      * @throws \Acteo\Exception\EroarePlanInactiv lipseste abonamentul de numere disponibile
      * @throws \Acteo\Exception\EroareLimita cota atinsa
-     * @throws \Acteo\Exception\EroareServer OCUPAT, INDISPONIBIL, EROARE_DGPCI sau TIMEOUT; cererea nu s-a taxat
+     * @throws \Acteo\Exception\EroareServer UPSTREAM_UNAVAILABLE, UPSTREAM_TIMEOUT, UPSTREAM_BLOCKED, UPSTREAM_CHANGED, OCUPAT sau INDISPONIBIL; cererea nu s-a taxat
      */
     public function verifica(string $numar): NumarDisponibil
     {

@@ -14,7 +14,9 @@ class ActeoException extends \RuntimeException
     /**
      * @param string $message mesajul, in romana, exact cum vine de la API cand exista
      * @param int|null $status statusul HTTP, cand eroarea vine dintr-un raspuns
-     * @param string|null $cod codul masinii (`LIMIT_ATINS`, `VEHICUL_EXISTENT`, `NEGASIT` etc.)
+     * @param string|null $cod codul masinii; de la API vine unul din `CodEroare` (`DAILY_LIMIT_REACHED`,
+     *   `UPSTREAM_TIMEOUT`, `VEHICUL_EXISTENT` etc.), iar SDK-ul pune singur cateva coduri locale
+     *   (`VALIDARE_LOCALA`, `TIMEOUT_VERIFICARE`, `PREA_MULTE_CERERI`)
      * @param string|null $hint indicatia API-ului despre cum se rezolva problema
      * @param mixed $raspuns corpul brut al raspunsului, pentru depanare
      * @param \Throwable|null $previous eroarea originala (de retea, de parsare)

@@ -49,7 +49,7 @@ final class ClientVerificari
      * @throws Exception\EroareValidare date invalide, local sau HTTP 400
      * @throws Exception\EroareAutentificare cheie API invalida (401)
      * @throws Exception\EroarePlanInactiv contul nu are abonament API activ (402)
-     * @throws Exception\EroareLimita cota zilnica sau lunara atinsa (429, cod COTA_ATINSA)
+     * @throws Exception\EroareLimita cota zilnica sau lunara atinsa (429, cod DAILY_LIMIT_REACHED sau PLAN_LIMIT_REACHED)
      * @throws EroareVerificare sursa oficiala nu a putut fi interogata
      * @throws Exception\EroareRetea fara raspuns sau timeout
      * @throws Exception\EroareServer eroare 5xx
@@ -136,7 +136,7 @@ final class ClientVerificari
      * Consuma o unitate din cota (doar pornirea; pollingul e gratuit).
      *
      * @throws Exception\EroareValidare date invalide, local sau HTTP 400
-     * @throws Exception\EroareLimita cota atinsa (cod COTA_ATINSA)
+     * @throws Exception\EroareLimita cota atinsa (cod DAILY_LIMIT_REACHED sau PLAN_LIMIT_REACHED)
      * @throws EroareTimeoutVerificare rezultatul nu a venit in `timeoutMs`
      * @throws EroareVerificare sursa oficiala nu a putut fi interogata
      * @throws Exception\ActeoException orice alta eroare de la API sau de retea
@@ -178,10 +178,11 @@ final class ClientVerificari
             $status = $d['status'] ?? null;
             if ($status === 'error') {
                 Decodor::enum($d, 'tip', '', TipVerificare::class);
-                // Cu `cod`, sursa a refuzat datele trimise si o reincercare nu ajuta.
+                // `code` e motivul; lipseste doar la serverele mai vechi. `cod` e campul
+                // refuzat la INVALID_IDENTIFIER, cand o reincercare cu aceleasi date nu ajuta.
                 throw new EroareVerificare(
                     Decodor::sir($d, 'error', ''),
-                    cod: 'VERIFICARE_ESUATA',
+                    cod: Decodor::sirOptional($d, 'code', '') ?? 'VERIFICARE_ESUATA',
                     hint: Decodor::sirOptional($d, 'hint', ''),
                     raspuns: $d,
                     codSursa: Decodor::sirOptional($d, 'cod', ''),

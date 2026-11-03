@@ -5,16 +5,20 @@ declare(strict_types=1);
 namespace Acteo\Exception;
 
 /**
- * Verificarea s-a terminat cu statusul error; `cod` e mereu `VERIFICARE_ESUATA`.
+ * Verificarea s-a terminat cu statusul error. `cod` spune de ce (vezi
+ * `CodEroare::ESEC_VERIFICARE`):
+ * - `INVALID_IDENTIFIER`: sursa a refuzat datele trimise, iar `codSursa` spune ce
+ *   camp e gresit (`serie_talon_invalida`, `vin_invalid`, `numar_invalid`). O
+ *   reincercare cu aceleasi date nu ajuta; corecteaza campul intai;
+ * - `UPSTREAM_UNAVAILABLE`, `UPSTREAM_TIMEOUT`, `UPSTREAM_BLOCKED`, `UPSTREAM_CHANGED`:
+ *   sursa oficiala nu a dat un raspuns; reia mai tarziu cu o cerere noua.
  *
- * Fara `codSursa`, sursa oficiala nu a raspuns la timp: reia cu o cerere noua.
- * Cu `codSursa` (`serie_talon_invalida`, `vin_invalid`, `numar_invalid`), sursa a
- * refuzat datele trimise: corecteaza-le, altfel o cerere noua da acelasi rezultat.
+ * Un server mai vechi, fara cod, da `cod` `VERIFICARE_ESUATA`.
  */
 final class EroareVerificare extends ActeoException
 {
     /**
-     * @param string|null $codSursa motivul trimis de API cand sursa a refuzat datele
+     * @param string|null $codSursa campul refuzat de sursa, doar la `INVALID_IDENTIFIER`
      */
     public function __construct(
         string $message,

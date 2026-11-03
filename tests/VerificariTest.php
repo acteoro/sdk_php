@@ -22,6 +22,7 @@ use Acteo\Model\VerificareInCurs;
 use Acteo\Tests\Ajutor\Ajutor;
 use Acteo\Tests\Ajutor\CeasFals;
 use Acteo\Tests\Ajutor\ClientFals;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 final class VerificariTest extends TestCase
@@ -159,7 +160,40 @@ final class VerificariTest extends TestCase
         }
     }
 
-    public function testCotaAtinsaFaraReincercare(): void
+    /** @return list<array{string}> */
+    public static function coduriCota(): array
+    {
+        return [['DAILY_LIMIT_REACHED'], ['PLAN_LIMIT_REACHED']];
+    }
+
+    #[DataProvider('coduriCota')]
+    public function testCotaAtinsaCuCodFaraReincercare(string $cod): void
+    {
+        $client = new ClientFals(ClientFals::raspuns(429, ['error' => 'Limita atinsa.', 'code' => $cod, 'dailyUsage' => '300/300', 'monthlyUsage' => '4000/10000']));
+        try {
+            Ajutor::client($client)->verificari->porneste(new CerereVerificare('rca', 'B123ABC'));
+            self::fail('trebuia sa arunce');
+        } catch (EroareLimita $e) {
+            self::assertSame($cod, $e->cod);
+            self::assertSame('300/300', $e->utilizareZi);
+        }
+        self::assertCount(1, $client->cereri);
+    }
+
+    public function testSursaOpritaLaPostNuSeRepeta(): void
+    {
+        $client = new ClientFals(ClientFals::raspuns(503, ['error' => 'Restrictionat.', 'code' => 'UPSTREAM_BLOCKED'], ['Retry-After' => '600']));
+        try {
+            Ajutor::client($client)->verificari->porneste(new CerereVerificare('rca', 'B123ABC'));
+            self::fail('trebuia sa arunce');
+        } catch (EroareServer $e) {
+            self::assertSame('UPSTREAM_BLOCKED', $e->cod);
+            self::assertSame(600000, $e->retryAfterMs);
+        }
+        self::assertCount(1, $client->cereri);
+    }
+
+    public function testCotaAtinsaPeServerFaraCod(): void
     {
         $client = new ClientFals(ClientFals::raspuns(429, ['error' => 'Limita atinsa.', 'dailyUsage' => '300/300', 'monthlyUsage' => '4000/10000']));
         try {
@@ -223,7 +257,34 @@ final class VerificariTest extends TestCase
         self::assertSame('1790000000000', $client->query(1)['since']);
     }
 
-    public function testRezultatStatusErrorDevineEroareVerificare(): void
+    public function testStatusErrorCuCodeDaMotivulInCod(): void
+    {
+        $client = new ClientFals(ClientFals::raspuns(200, [
+            'tip' => 'rca',
+            'query' => 'B123ABC',
+            'status' => 'error',
+            'code' => 'UPSTREAM_TIMEOUT',
+            'error' => 'Sursa nu a raspuns.',
+        ]));
+        try {
+            Ajutor::client($client)->verificari->rezultat(new ReferintaVerificare(TipVerificare::Rca, 'B123ABC'));
+            self::fail('trebuia sa arunce');
+        } catch (EroareVerificare $e) {
+            self::assertSame('UPSTREAM_TIMEOUT', $e->cod);
+            self::assertNull($e->codSursa);
+        }
+    }
+
+    public function testNotFoundPoartaCodeInRezultat(): void
+    {
+        $client = new ClientFals(ClientFals::raspuns(200, ['status' => 'not_found', 'expiresAt' => null, 'code' => 'NOT_FOUND'] + Ajutor::REZULTAT_VALID));
+        $r = Ajutor::client($client)->verificari->rezultat(new ReferintaVerificare(TipVerificare::Rca, 'B123ABC'));
+        self::assertInstanceOf(VerificareFinala::class, $r);
+        self::assertSame(StatusDocument::NotFound, $r->status);
+        self::assertSame('NOT_FOUND', $r->code);
+    }
+
+    public function testRezultatStatusErrorPeServerFaraCod(): void
     {
         $client = new ClientFals(ClientFals::raspuns(200, [
             'tip' => 'rca',
@@ -249,6 +310,7 @@ final class VerificariTest extends TestCase
             'tip' => 'rovinieta',
             'query' => 'B123ABC',
             'status' => 'error',
+            'code' => 'INVALID_IDENTIFIER',
             'error' => 'Numarul certificatului de inmatriculare nu corespunde vehiculului.',
             'cod' => 'serie_talon_invalida',
         ]));
@@ -256,7 +318,7 @@ final class VerificariTest extends TestCase
             Ajutor::client($client)->verificari->rezultat(new ReferintaVerificare(TipVerificare::Rovinieta, 'B123ABC', Ajutor::VIN));
             self::fail('trebuia sa arunce');
         } catch (EroareVerificare $e) {
-            self::assertSame('VERIFICARE_ESUATA', $e->cod);
+            self::assertSame('INVALID_IDENTIFIER', $e->cod);
             self::assertSame('serie_talon_invalida', $e->codSursa);
         }
     }

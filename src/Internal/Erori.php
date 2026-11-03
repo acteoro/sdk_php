@@ -41,7 +41,7 @@ final class Erori
 
                 return new EroareValidare($mesaj, $status, $cod, $hint, $corp, acceptate: $acceptate);
             case 422:
-                // Sursa oficiala refuza valoarea trimisa (ex: NUMAR_RESPINS).
+                // Sursa oficiala refuza valoarea trimisa (INVALID_IDENTIFIER).
                 return new EroareValidare($mesaj, $status, $cod, $hint, $corp);
             case 401:
                 return new EroareAutentificare($mesaj, $status, $cod, $hint, $corp);
@@ -58,6 +58,7 @@ final class Erori
             case 429:
                 $zi = $sir('dailyUsage');
                 $luna = $sir('monthlyUsage');
+                // Fara cod: un server mai vechi la cota atinsa, sau throttle-ul de polling.
                 $cod ??= (($zi ?? '') !== '' || ($luna ?? '') !== '') ? 'COTA_ATINSA' : 'PREA_MULTE_CERERI';
 
                 return new EroareLimita(
