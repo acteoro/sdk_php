@@ -1,5 +1,25 @@
 # Changelog
 
+## acteo/api 0.5.0 (2026-11-03)
+
+API-ul trimite acum codurile de eroare din contract. Dacă ai cod care compară `$e->cod` cu valorile vechi, schimbă-l după tabelul de mai jos. Clasele de eroare și statusurile HTTP rămân aceleași.
+
+| Situație | Cod vechi | Cod nou |
+|---|---|---|
+| Limita zilnică a planului atinsă (429) | `COTA_ATINSA` la verificări, `LIMIT_ATINS` la VIN, numere și poze | `DAILY_LIMIT_REACHED` |
+| Limita lunară sau plafonul consumului peste plan atins (429) | `COTA_ATINSA` la verificări, `LIMIT_ATINS` la VIN, numere și poze | `PLAN_LIMIT_REACHED` |
+| DGPCI refuză numărul (422) | `NUMAR_RESPINS` | `INVALID_IDENTIFIER` |
+| DGPCI nu răspunde la timp (504) | `TIMEOUT` | `UPSTREAM_TIMEOUT` |
+| Verificarea la DGPCI eșuează (502) | `EROARE_DGPCI` | `UPSTREAM_UNAVAILABLE` |
+| Verificare încheiată cu `status` `error` | `VERIFICARE_ESUATA` | `INVALID_IDENTIFIER`, `UPSTREAM_UNAVAILABLE`, `UPSTREAM_TIMEOUT`, `UPSTREAM_BLOCKED` sau `UPSTREAM_CHANGED` |
+
+- Enum nou `Acteo\Enum\CodEroare`, cu toate codurile pe care le trimite API-ul; `CodEroare::valori()` le dă ca text. `CodEroare::ESEC_VERIFICARE` are motivele unei verificări eșuate. `cod` pe excepții rămâne `string`.
+- `EroareVerificare::$cod` spune de ce a eșuat verificarea. `codSursa` rămâne și arată câmpul refuzat la `INVALID_IDENTIFIER`.
+- Rezultatul `NotFound` (`VerificareFinala`) are `code` `NOT_FOUND`, iar `WebhookRezultat` are `code` la eroare și la `NotFound`. Ambele sunt opționale (`null` când lipsesc).
+- Pornirea unei verificări sau a unei verificări de număr poate primi `EroareServer` 503 cu `UPSTREAM_BLOCKED` sau `UPSTREAM_CHANGED` când sursa oficială e oprită temporar. Cererea nu se taxează și nu se repetă singură; `retryAfterMs` spune când să revii.
+- `DAILY_LIMIT_REACHED` vine cu `retryAfterMs` până la miezul nopții, ora României. `PLAN_LIMIT_REACHED` nu are `retryAfterMs`, pentru că nu se deblochează la miezul nopții.
+- Un server mai vechi, fără coduri, dă în continuare `COTA_ATINSA` și `VERIFICARE_ESUATA`.
+
 ## acteo/api 0.4.1 (2026-10-31)
 
 - Documentație: fiecare verificare interoghează sursa oficială. `porneste()` întoarce o verificare în curs, iar rezultatul vine prin `asteapta()`, `rezultat()` sau webhook. `checkedAt` e descris ca momentul verificării. Codul nu se schimbă.
